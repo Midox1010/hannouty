@@ -45,7 +45,6 @@ export default function AdminOrdersPage() {
         .from('orders')
         .select(`
           id, user_id, created_at, status, total_amount, discount_amount, final_amount, profiles ( full_name, email ),
-          profiles!orders_user_id_fkey ( full_name ),
           order_items (
             id, quantity, unit_price,
             products ( name, image_url )
