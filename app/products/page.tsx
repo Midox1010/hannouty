@@ -1,114 +1,177 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState, useEffect, useContext } from 'react'
 import { createClient } from '../lib/supabase/client'
-import { useCart } from '../context/CartContext'
+import { CartContext } from '../context/CartContext'
+import Link from 'next/link'
 
-interface Product {
-  id: number
+type Product = {
+  id: string
   name: string
   description: string | null
   price: number
   image_url: string | null
-  stock_quantity: number
 }
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
-  const [addedMessage, setAddedMessage] = useState('')
-  
-  const { addToCart } = useCart()
+  const [search, setSearch] = useState('')
+  const [added, setAdded] = useState<Record<string, boolean>>({})
+  const cart = useContext(CartContext)
   const supabase = createClient()
 
   useEffect(() => {
-    const fetchProducts = async () => {
-      const { data, error } = await supabase
+    async function load() {
+      const { data } = await supabase
         .from('products')
-        .select('*')
+        .select('id, name, description, price, image_url')
         .eq('is_active', true)
-        .order('created_at', { ascending: false })
-
-      if (data) {
-        setProducts(data)
-      }
+        .order('name')
+      if (data) setProducts(data)
       setLoading(false)
     }
-
-    fetchProducts()
+    load()
   }, [])
 
-  // Fonction pour ajouter au panier
-  const handleAddToCart = (product: Product) => {
-    addToCart(product)
-    setAddedMessage(`${product.name} ajouté au panier !`)
-    
-    // Effacer le message après 2 secondes
-    setTimeout(() => {
-      setAddedMessage('')
-    }, 2000)
+  function handleAdd(product: Product) {
+    cart?.addItem({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      image_url: product.image_url,
+    })
+    setAdded(prev => ({ ...prev, [product.id]: true }))
+    setTimeout(() => setAdded(prev => ({ ...prev, [product.id]: false })), 1500)
   }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p>Chargement des produits...</p>
-      </div>
-    )
-  }
+  const cartCount = cart?.items?.reduce((s: number, i: any) => s + i.quantity, 0) ?? 0
+
+  const filtered = products.filter(p =>
+    p.name.toLowerCase().includes(search.toLowerCase()) ||
+    (p.description ?? '').toLowerCase().includes(search.toLowerCase())
+  )
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold mb-8">Nos Produits</h1>
+    <div className="min-h-screen bg-gray-50">
+      {/* Navbar */}
+      <nav className="bg-white border-b border-gray-200 h-14 flex items-center justify-between px-6 sticky top-0 z-10">
+        <Link href="/products" className="flex items-center gap-2 font-semibold text-gray-900 text-base">
+          🛒 Hannouty
+        </Link>
+        <div className="flex gap-1">
+          {[
+            { label: 'Produits', href: '/products' },
+            { label: 'Mes commandes', href: '/orders' },
+            { label: 'Mon profil', href: '/profile' },
+          ].map(link => (
+            <Link key={link.href} href={link.href}
+              className={`text-sm px-4 py-1.5 rounded-md transition-colors ${
+                link.href === '/products'
+                  ? 'bg-gray-100 text-gray-900 font-medium'
+                  : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
+              }`}>
+              {link.label}
+            </Link>
+          ))}
+        </div>
+        <div className="flex items-center gap-3">
+          <Link href="/cart" className="relative w-9 h-9 bg-gray-100 rounded-lg flex items-center justify-center text-lg hover:bg-gray-200 transition-colors">
+            🛒
+            {cartCount > 0 && (
+              <span className="absolute -top-1 -right-1 bg-green-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+                {cartCount}
+              </span>
+            )}
+          </Link>
+          <Link href="/login"
+            className="text-sm text-gray-500 border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors">
+            Déconnexion
+          </Link>
+        </div>
+      </nav>
 
-        {/* Message de confirmation */}
-        {addedMessage && (
-          <div className="mb-4 p-4 bg-green-100 text-green-700 rounded-lg text-center">
-            {addedMessage}
+      <div className="max-w-5xl mx-auto px-6 py-8">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-2xl font-semibold text-gray-900">Nos produits</h1>
+            {!loading && (
+              <p className="text-sm text-gray-400 mt-0.5">{filtered.length} produit{filtered.length !== 1 ? 's' : ''}</p>
+            )}
           </div>
-        )}
+          <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-xl px-4 py-2.5 w-56">
+            <span className="text-gray-400 text-sm">🔍</span>
+            <input
+              type="text"
+              placeholder="Rechercher…"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="flex-1 text-sm text-gray-900 bg-transparent focus:outline-none placeholder-gray-400"
+            />
+          </div>
+        </div>
 
-        {products.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-gray-500 text-lg">Aucun produit disponible pour le moment.</p>
+        {/* Grille */}
+        {loading ? (
+          <div className="grid grid-cols-3 gap-4">
+            {[1, 2, 3, 4, 5, 6].map(i => (
+              <div key={i} className="bg-white rounded-2xl border border-gray-100 overflow-hidden animate-pulse">
+                <div className="h-36 bg-gray-100" />
+                <div className="p-4 space-y-2">
+                  <div className="h-4 bg-gray-100 rounded w-2/3" />
+                  <div className="h-3 bg-gray-100 rounded w-1/2" />
+                  <div className="h-8 bg-gray-100 rounded mt-3" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-24 text-gray-400">
+            <p className="text-4xl mb-3">🔍</p>
+            <p className="text-sm">Aucun produit trouvé pour "{search}"</p>
+            <button onClick={() => setSearch('')} className="mt-3 text-sm text-green-600 hover:underline">
+              Réinitialiser la recherche
+            </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {products.map((product) => (
-              <div 
-                key={product.id} 
-                className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow"
-              >
+          <div className="grid grid-cols-3 gap-4">
+            {filtered.map(product => (
+              <div key={product.id} className="bg-white rounded-2xl border border-gray-100 overflow-hidden hover:border-gray-200 hover:shadow-sm transition-all">
                 {/* Image */}
-                <div className="h-48 bg-gray-200 flex items-center justify-center overflow-hidden">
+                <div className="h-36 flex items-center justify-center bg-gray-50 overflow-hidden">
                   {product.image_url ? (
-                    <img 
-                      src={product.image_url} 
-                      alt={product.name} 
-                      className="h-full w-full object-cover"
+                    <img
+                      src={product.image_url}
+                      alt={product.name}
+                      className="max-h-32 max-w-full object-contain"
+                      onError={e => { (e.target as HTMLImageElement).style.display = 'none' }}
                     />
                   ) : (
-                    <div className="text-gray-400">Pas d'image</div>
+                    <span className="text-4xl text-gray-200">🛒</span>
                   )}
                 </div>
 
-                {/* Infos produit */}
+                {/* Body */}
                 <div className="p-4">
-                  <h3 className="font-semibold text-lg mb-2">{product.name}</h3>
-                  <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                    {product.description || 'Aucune description'}
+                  <p className="font-semibold text-gray-900 text-sm mb-0.5 line-clamp-1">{product.name}</p>
+                  <p className="text-xs text-gray-400 mb-3 line-clamp-1">
+                    {product.description ?? 'Aucune description'}
                   </p>
-
-                  <div className="flex justify-between items-center">
-                    <span className="text-2xl font-bold text-blue-600">
-                      {product.price} €
+                  <div className="flex items-center justify-between">
+                    <span className="text-lg font-bold text-gray-900">
+                      {product.price.toFixed(2)}
+                      <span className="text-xs font-normal text-gray-400 ml-1">MAD</span>
                     </span>
-                    <button 
-                      onClick={() => handleAddToCart(product)}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium"
+                    <button
+                      onClick={() => handleAdd(product)}
+                      className={`text-xs font-semibold px-4 py-2 rounded-lg transition-all ${
+                        added[product.id]
+                          ? 'bg-green-100 text-green-700'
+                          : 'bg-green-500 hover:bg-green-600 text-white'
+                      }`}
                     >
-                      Ajouter
+                      {added[product.id] ? '✓ Ajouté' : '+ Ajouter'}
                     </button>
                   </div>
                 </div>

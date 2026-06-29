@@ -1,154 +1,212 @@
 'use client'
-import { useEffect, useState } from 'react'
-import { createClient } from '@/app/lib/supabase/client'
+
+import { useState, useEffect } from 'react'
+import { createClient } from '../lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 
 type OrderItem = {
   id: string
   quantity: number
   unit_price: number
-  products: { name: string; image_url: string }
+  subtotal: number
+  products: { name: string; image_url: string | null } | null
 }
 
 type Order = {
   id: string
-  created_at: string
   status: string
   total_amount: number
-  discount_applied: number
+  discount_amount: number
+  final_amount: number
+  created_at: string
   order_items: OrderItem[]
 }
 
-const STATUS: Record<string, { label: string; color: string }> = {
-  pending:    { label: 'En attente',    color: 'bg-yellow-100 text-yellow-700' },
-  confirmed:  { label: 'Confirmée',     color: 'bg-blue-100 text-blue-700' },
-  delivering: { label: 'En livraison',  color: 'bg-purple-100 text-purple-700' },
-  delivered:  { label: 'Livrée ✅',     color: 'bg-green-100 text-green-700' },
-  cancelled:  { label: 'Annulée ❌',    color: 'bg-red-100 text-red-700' },
+const STATUS_CONFIG: Record<string, { label: string; color: string; icon: string }> = {
+  pending:    { label: 'En attente',   color: 'bg-orange-50 text-orange-700 border-orange-200',  icon: '⏳' },
+  confirmed:  { label: 'Confirmée',    color: 'bg-blue-50 text-blue-700 border-blue-200',         icon: '✅' },
+  delivering: { label: 'En livraison', color: 'bg-purple-50 text-purple-700 border-purple-200',   icon: '🚚' },
+  delivered:  { label: 'Livrée',       color: 'bg-green-50 text-green-700 border-green-200',      icon: '📦' },
+  cancelled:  { label: 'Annulée',      color: 'bg-red-50 text-red-600 border-red-200',            icon: '❌' },
 }
 
-export default function MyOrdersPage() {
-  const supabase = createClient()
-  const router = useRouter()
+export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
-  const [expanded, setExpanded] = useState<string | null>(null)
+  const [expandedId, setExpandedId] = useState<string | null>(null)
+  const router = useRouter()
+  const supabase = createClient()
 
   useEffect(() => {
-    const fetchOrders = async () => {
+    async function load() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
 
       const { data } = await supabase
         .from('orders')
         .select(`
-          id, created_at, status, total_amount, discount_applied,
-          order_items (
-            id, quantity, unit_price,
-            products ( name, image_url )
-          )
+          id, status, total_amount, discount_amount, final_amount, created_at,
+          order_items(id, quantity, unit_price, subtotal, products(name, image_url))
         `)
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
 
-      setOrders((data as unknown as Order[]) || [])
+      if (data) setOrders(data as any)
       setLoading(false)
     }
-
-    fetchOrders()
+    load()
   }, [])
 
-  if (loading) return (
-    <div className="flex justify-center items-center h-64">
-      <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-green-600"/>
-    </div>
-  )
+  const cartCount = 0
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6 text-gray-800">Mes Commandes</h1>
-
-      {orders.length === 0 ? (
-        <div className="text-center py-20 text-gray-400">
-          <p className="text-5xl mb-4">🛍️</p>
-          <p className="text-lg mb-4">Aucune commande pour l'instant</p>
-          <button
-            onClick={() => router.push('/products')}
-            className="bg-green-600 text-white px-6 py-2 rounded-full hover:bg-green-700 transition"
-          >
-            Voir les produits
-          </button>
+    <div className="min-h-screen bg-gray-50">
+      {/* Navbar */}
+      <nav className="bg-white border-b border-gray-200 h-14 flex items-center justify-between px-6">
+        <Link href="/products" className="flex items-center gap-2 font-semibold text-gray-900 text-base">
+          🛒 Hannouty
+        </Link>
+        <div className="flex gap-1">
+          {[
+            { label: 'Produits', href: '/products' },
+            { label: 'Mes commandes', href: '/orders' },
+            { label: 'Mon profil', href: '/profile' },
+          ].map(link => (
+            <Link key={link.href} href={link.href}
+              className={`text-sm px-4 py-1.5 rounded-md transition-colors ${
+                link.href === '/orders'
+                  ? 'bg-gray-100 text-gray-900 font-medium'
+                  : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
+              }`}>
+              {link.label}
+            </Link>
+          ))}
         </div>
-      ) : (
-        <div className="space-y-3">
-          {orders.map(order => {
-            const st = STATUS[order.status] ?? { label: order.status, color: 'bg-gray-100 text-gray-600' }
-            const isOpen = expanded === order.id
+        <div className="flex items-center gap-3">
+          <Link href="/cart" className="relative w-9 h-9 bg-gray-100 rounded-lg flex items-center justify-center text-lg hover:bg-gray-200 transition-colors">
+            🛒
+          </Link>
+          <Link href="/login"
+            className="text-sm text-gray-500 border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors">
+            Déconnexion
+          </Link>
+        </div>
+      </nav>
 
-            return (
-              <div key={order.id} className="border rounded-xl shadow-sm overflow-hidden">
+      <div className="max-w-3xl mx-auto px-6 py-8">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-2xl font-semibold text-gray-900">Mes commandes</h1>
+            {!loading && (
+              <p className="text-sm text-gray-400 mt-0.5">{orders.length} commande{orders.length !== 1 ? 's' : ''}</p>
+            )}
+          </div>
+        </div>
 
-                {/* En-tête de la commande */}
-                <button
-                  onClick={() => setExpanded(isOpen ? null : order.id)}
-                  className="w-full flex items-center justify-between p-4 bg-white hover:bg-gray-50 transition"
-                >
-                  <div className="text-left">
-                    <p className="text-xs text-gray-400 font-mono">
-                      #{order.id.slice(0, 8).toUpperCase()}
-                    </p>
-                    <p className="text-sm text-gray-500 mt-0.5">
-                      {new Date(order.created_at).toLocaleDateString('fr-FR', {
-                        day: '2-digit', month: 'long', year: 'numeric'
-                      })}
-                    </p>
-                  </div>
+        {loading ? (
+          <div className="space-y-3">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="bg-white rounded-2xl border border-gray-100 p-5 animate-pulse">
+                <div className="h-4 bg-gray-100 rounded w-1/3 mb-3" />
+                <div className="h-3 bg-gray-100 rounded w-1/2" />
+              </div>
+            ))}
+          </div>
+        ) : orders.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-24 text-center">
+            <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center text-4xl mb-4">🛍️</div>
+            <h2 className="text-lg font-semibold text-gray-900 mb-1">Aucune commande</h2>
+            <p className="text-sm text-gray-400 mb-6">Parcourez notre catalogue et passez votre première commande</p>
+            <Link href="/products"
+              className="bg-green-500 hover:bg-green-600 text-white text-sm font-medium px-6 py-3 rounded-xl transition-colors">
+              Voir les produits
+            </Link>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {orders.map(order => {
+              const status = STATUS_CONFIG[order.status] ?? { label: order.status, color: 'bg-gray-50 text-gray-600 border-gray-200', icon: '•' }
+              const isExpanded = expandedId === order.id
+              const itemsLabel = order.order_items
+                .map(i => `${i.products?.name ?? 'Produit'} ×${i.quantity}`)
+                .join(' · ')
 
-                  <div className="flex items-center gap-3">
-                    <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${st.color}`}>
-                      {st.label}
-                    </span>
-                    <span className="font-bold text-green-700">
-                      {order.total_amount.toFixed(2)} MAD
-                    </span>
-                    <span className="text-gray-400 text-sm">{isOpen ? '▲' : '▼'}</span>
-                  </div>
-                </button>
-
-                {/* Détail des produits */}
-                {isOpen && (
-                  <div className="border-t bg-gray-50 p-4 space-y-3">
-                    {order.order_items.map(item => (
-                      <div key={item.id} className="flex items-center gap-3">
-                        <img
-                          src={item.products.image_url}
-                          alt={item.products.name}
-                          className="w-12 h-12 object-cover rounded-lg border"
-                        />
-                        <div className="flex-1">
-                          <p className="text-sm font-medium text-gray-800">{item.products.name}</p>
-                          <p className="text-xs text-gray-400">
-                            {item.quantity} × {item.unit_price.toFixed(2)} MAD
-                          </p>
+              return (
+                <div key={order.id} className="bg-white rounded-2xl border border-gray-100 overflow-hidden hover:border-gray-200 transition-colors">
+                  {/* Header commande */}
+                  <button
+                    onClick={() => setExpandedId(isExpanded ? null : order.id)}
+                    className="w-full text-left p-5"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <span className="text-xs font-mono text-gray-400">#{order.id.slice(0, 8).toUpperCase()}</span>
+                          <span className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full border ${status.color}`}>
+                            {status.icon} {status.label}
+                          </span>
                         </div>
-                        <p className="text-sm font-semibold text-gray-700">
-                          {(item.quantity * item.unit_price).toFixed(2)} MAD
+                        <p className="text-sm text-gray-500 line-clamp-1">{itemsLabel}</p>
+                        <p className="text-xs text-gray-400 mt-1">
+                          {new Date(order.created_at).toLocaleDateString('fr-FR', {
+                            day: 'numeric', month: 'long', year: 'numeric'
+                          })}
                         </p>
                       </div>
-                    ))}
+                      <div className="text-right ml-4">
+                        <p className="text-lg font-bold text-gray-900">{order.final_amount.toFixed(2)} <span className="text-sm font-normal text-gray-400">MAD</span></p>
+                        {order.discount_amount > 0 && (
+                          <p className="text-xs text-green-600 mt-0.5">Économie : {order.discount_amount.toFixed(2)} MAD</p>
+                        )}
+                        <p className="text-xs text-gray-400 mt-1">{isExpanded ? '▲ Réduire' : '▼ Détails'}</p>
+                      </div>
+                    </div>
+                  </button>
 
-                    {order.discount_applied > 0 && (
-                      <p className="text-right text-sm text-green-600 font-medium pt-2 border-t">
-                        Réduction fidélité : -{order.discount_applied}%
-                      </p>
-                    )}
-                  </div>
-                )}
-              </div>
-            )
-          })}
-        </div>
-      )}
+                  {/* Détail items */}
+                  {isExpanded && (
+                    <div className="border-t border-gray-50 px-5 pb-5 pt-4">
+                      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Articles commandés</p>
+                      <div className="space-y-2">
+                        {order.order_items.map(item => (
+                          <div key={item.id} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center text-sm">
+                                {item.products?.image_url ? (
+                                  <img src={item.products.image_url} className="w-full h-full object-contain rounded-lg" alt="" />
+                                ) : '🛒'}
+                              </div>
+                              <div>
+                                <p className="text-sm font-medium text-gray-900">{item.products?.name ?? 'Produit'}</p>
+                                <p className="text-xs text-gray-400">{item.unit_price.toFixed(2)} MAD × {item.quantity}</p>
+                              </div>
+                            </div>
+                            <span className="text-sm font-semibold text-gray-900">{item.subtotal.toFixed(2)} MAD</span>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="mt-3 pt-3 border-t border-gray-100 space-y-1">
+                        <div className="flex justify-between text-sm text-gray-500">
+                          <span>Sous-total</span><span>{order.total_amount.toFixed(2)} MAD</span>
+                        </div>
+                        {order.discount_amount > 0 && (
+                          <div className="flex justify-between text-sm text-green-600">
+                            <span>Réduction fidélité</span><span>−{order.discount_amount.toFixed(2)} MAD</span>
+                          </div>
+                        )}
+                        <div className="flex justify-between text-base font-bold text-gray-900 pt-1">
+                          <span>Total</span><span>{order.final_amount.toFixed(2)} MAD</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

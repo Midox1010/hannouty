@@ -1,123 +1,235 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createClient } from '../lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+
+type Profile = {
+  full_name: string | null
+  level_id: string | null
+  levels: {
+    name: string
+    discount_percent: number
+  } | null
+}
+
+type Stats = {
+  order_count: number
+  total_spent: number
+}
+
+const LEVELS = [
+  { name: 'Bronze',  emoji: '🥉', discount: 0,  threshold: 0   },
+  { name: 'Argent',  emoji: '🥈', discount: 5,  threshold: 120 },
+  { name: 'Or',      emoji: '🥇', discount: 10, threshold: 300 },
+  { name: 'Platine', emoji: '💎', discount: 15, threshold: 600 },
+]
 
 export default function ProfilePage() {
-  const [profile, setProfile] = useState<any>(null)
-  const [level, setLevel] = useState<any>(null)
+  const [profile, setProfile] = useState<Profile | null>(null)
+  const [email, setEmail] = useState('')
+  const [stats, setStats] = useState<Stats>({ order_count: 0, total_spent: 0 })
   const [loading, setLoading] = useState(true)
-  
   const router = useRouter()
   const supabase = createClient()
 
   useEffect(() => {
-    const fetchProfile = async () => {
+    async function load() {
       const { data: { user } } = await supabase.auth.getUser()
-      
-      if (!user) {
-        router.push('/login')
-        return
-      }
+      if (!user) { router.push('/login'); return }
+      setEmail(user.email ?? '')
 
-      // Récupérer le profil avec le niveau
-      const { data: profileData } = await supabase
+      const { data: prof } = await supabase
         .from('profiles')
-        .select('*, levels(*)')
+        .select('full_name, level_id, levels(name, discount_percent)')
         .eq('id', user.id)
         .single()
 
-      if (profileData) {
-        setProfile(profileData)
-        setLevel(profileData.levels)
+      if (prof) setProfile(prof as any)
+
+      const { data: orders } = await supabase
+        .from('orders')
+        .select('final_amount')
+        .eq('user_id', user.id)
+
+      if (orders) {
+        setStats({
+          order_count: orders.length,
+          total_spent: orders.reduce((s, o) => s + (o.final_amount ?? 0), 0),
+        })
       }
-      
+
       setLoading(false)
     }
-
-    fetchProfile()
+    load()
   }, [])
 
-  const handleLogout = async () => {
+  async function handleLogout() {
     await supabase.auth.signOut()
     router.push('/login')
   }
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p>Chargement...</p>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <p className="text-gray-400 text-sm">Chargement...</p>
       </div>
     )
   }
 
+  const levelName = profile?.levels?.name ?? 'Bronze'
+  const currentLevelIdx = LEVELS.findIndex(l => l.name === levelName)
+  const currentLevel = LEVELS[currentLevelIdx] ?? LEVELS[0]
+  const nextLevel = LEVELS[currentLevelIdx + 1] ?? null
+  const progressPercent = nextLevel
+    ? Math.min(100, Math.round((stats.total_spent / nextLevel.threshold) * 100))
+    : 100
+
+  const initials = (profile?.full_name ?? email)
+    .split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || '?'
+
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-2xl mx-auto">
-        <div className="bg-white rounded-lg shadow-md p-8">
-          <div className="flex justify-between items-center mb-8">
-            <h1 className="text-3xl font-bold">Mon Profil</h1>
-            <button 
-              onClick={handleLogout}
-              className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
-            >
-              Se déconnecter
-            </button>
-          </div>
+    <div className="min-h-screen bg-gray-50">
+      {/* Navbar */}
+      <nav className="bg-white border-b border-gray-200 h-14 flex items-center justify-between px-6">
+        <Link href="/products" className="flex items-center gap-2 font-semibold text-gray-900 text-base">
+          🛒 Hannouty
+        </Link>
+        <div className="flex gap-1">
+          {[
+            { label: 'Produits', href: '/products' },
+            { label: 'Mes commandes', href: '/orders' },
+            { label: 'Mon profil', href: '/profile' },
+          ].map(link => (
+            <Link key={link.href} href={link.href}
+              className={`text-sm px-4 py-1.5 rounded-md transition-colors ${
+                link.href === '/profile'
+                  ? 'bg-gray-100 text-gray-900 font-medium'
+                  : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
+              }`}>
+              {link.label}
+            </Link>
+          ))}
+        </div>
+        <div className="flex items-center gap-3">
+          <Link href="/cart" className="relative w-9 h-9 bg-gray-100 rounded-lg flex items-center justify-center text-lg hover:bg-gray-200 transition-colors">
+            🛒
+          </Link>
+          <button onClick={handleLogout}
+            className="text-sm text-gray-500 border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors">
+            Déconnexion
+          </button>
+        </div>
+      </nav>
 
-          {/* Informations utilisateur */}
-          <div className="mb-8">
-            <h2 className="text-xl font-semibold mb-4">Informations</h2>
-            <div className="space-y-2 text-gray-700">
-              <p><strong>Nom :</strong> {profile?.full_name || 'Non renseigné'}</p>
-              <p><strong>Email :</strong> {profile?.email}</p>
-              <p><strong>Téléphone :</strong> {profile?.phone || 'Non renseigné'}</p>
-            </div>
-          </div>
+      <div className="max-w-4xl mx-auto px-6 py-8">
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl font-semibold text-gray-900">Mon profil</h1>
+        </div>
 
-          {/* Niveau de fidélité */}
-          <div className="mb-8 p-6 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-xl text-white">
-            <div className="flex justify-between items-center">
+        <div className="grid grid-cols-2 gap-4">
+          {/* Carte infos */}
+          <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+            <div className="flex items-center gap-4 p-5 border-b border-gray-100">
+              <div className="w-14 h-14 rounded-full bg-green-100 text-green-700 text-xl font-semibold flex items-center justify-center flex-shrink-0">
+                {initials}
+              </div>
               <div>
-                <p className="text-sm opacity-80">Niveau actuel</p>
-                <h3 className="text-4xl font-bold">{level?.name || 'Bronze'}</h3>
+                <p className="font-semibold text-gray-900 text-base">{profile?.full_name ?? 'Sans nom'}</p>
+                <p className="text-sm text-gray-400 mt-0.5">{email}</p>
               </div>
-              <div className="text-right">
-                <p className="text-sm opacity-80">Réduction</p>
-                <p className="text-3xl font-bold">{level?.discount_percent || 0}%</p>
+            </div>
+
+            <div className="px-5 py-2">
+              {[
+                { label: 'Nom complet', value: profile?.full_name, muted: !profile?.full_name },
+                { label: 'Email', value: email },
+                { label: 'Téléphone', value: null, muted: true },
+              ].map((row, i) => (
+                <div key={i} className="flex items-center justify-between py-3 border-b border-gray-50 last:border-0">
+                  <span className="text-xs text-gray-400">{row.label}</span>
+                  <span className={`text-sm font-medium ${row.muted ? 'text-gray-300 italic font-normal' : 'text-gray-900'}`}>
+                    {row.value ?? 'Non renseigné'}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 p-4 pt-2">
+              <div className="bg-gray-50 rounded-xl p-3">
+                <p className="text-xs text-gray-400 mb-1">Commandes</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.order_count}</p>
               </div>
+              <div className="bg-gray-50 rounded-xl p-3">
+                <p className="text-xs text-gray-400 mb-1">Total dépensé</p>
+                <p className="text-xl font-bold text-gray-900">{stats.total_spent.toFixed(0)} <span className="text-sm font-normal text-gray-400">MAD</span></p>
+              </div>
+            </div>
+
+            <div className="px-4 pb-4">
+              <button onClick={handleLogout}
+                className="w-full text-sm text-red-500 border border-red-200 hover:bg-red-50 py-2.5 rounded-xl transition-colors font-medium">
+                Se déconnecter
+              </button>
             </div>
           </div>
 
-          {/* Statistiques */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="p-6 bg-gray-100 rounded-xl">
-              <p className="text-sm text-gray-500">Commandes effectuées</p>
-              <p className="text-3xl font-bold mt-2">{profile?.total_orders || 0}</p>
+          {/* Carte niveau */}
+          <div className="bg-white rounded-2xl border border-gray-200 p-5">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <span className="text-3xl">{currentLevel.emoji}</span>
+                <div>
+                  <p className="text-xs text-gray-400">Niveau actuel</p>
+                  <p className="text-xl font-bold text-gray-900">{currentLevel.name}</p>
+                </div>
+              </div>
+              <div className="bg-green-50 text-green-700 text-sm font-semibold px-3 py-1.5 rounded-full">
+                {currentLevel.discount}% de remise
+              </div>
             </div>
-            <div className="p-6 bg-gray-100 rounded-xl">
-              <p className="text-sm text-gray-500">Total dépensé</p>
-              <p className="text-3xl font-bold mt-2">
-                {profile?.total_spent || 0} €
-              </p>
-            </div>
-          </div>
 
-          {/* Progression vers le niveau suivant */}
-          <div className="mt-8">
-            <p className="text-sm text-gray-500 mb-2">
-              Progression vers le niveau suivant
-            </p>
-            <div className="w-full bg-gray-200 rounded-full h-4">
-              <div 
-                className="bg-blue-600 h-4 rounded-full transition-all"
-                style={{ width: `${Math.min(((profile?.total_orders || 0) / 5) * 100, 100)}%` }}
-              ></div>
+            {nextLevel ? (
+              <>
+                <p className="text-xs text-gray-400 mb-2">
+                  Progression vers {nextLevel.emoji} {nextLevel.name} ({nextLevel.discount}%)
+                </p>
+                <div className="h-2 bg-gray-100 rounded-full overflow-hidden mb-1.5">
+                  <div
+                    className="h-full bg-green-500 rounded-full transition-all"
+                    style={{ width: `${progressPercent}%` }}
+                  />
+                </div>
+                <p className="text-xs text-gray-400">
+                  {stats.total_spent.toFixed(0)} MAD / {nextLevel.threshold} MAD
+                  &nbsp;·&nbsp; encore {Math.max(0, nextLevel.threshold - stats.total_spent).toFixed(0)} MAD
+                </p>
+              </>
+            ) : (
+              <p className="text-sm text-green-600 font-medium">🎉 Niveau maximum atteint !</p>
+            )}
+
+            <div className="grid grid-cols-4 gap-2 mt-5">
+              {LEVELS.map((lvl, i) => (
+                <div key={lvl.name}
+                  className={`text-center py-2.5 px-1 rounded-xl border text-xs font-medium transition-colors ${
+                    i === currentLevelIdx
+                      ? 'bg-green-50 border-green-200 text-green-700'
+                      : i < currentLevelIdx
+                      ? 'bg-gray-50 border-gray-100 text-gray-400'
+                      : 'border-gray-100 text-gray-300'
+                  }`}>
+                  <div className="text-lg mb-1">{lvl.emoji}</div>
+                  {lvl.name}
+                </div>
+              ))}
             </div>
-            <p className="text-xs text-gray-500 mt-1">
-              {profile?.total_orders || 0} / 5 commandes pour le niveau Argent
-            </p>
+
+            <div className="mt-4 bg-green-50 rounded-xl p-3 text-xs text-green-700">
+              <p className="font-medium mb-0.5">Comment progresser ?</p>
+              <p className="text-green-600">Chaque commande passée augmente votre niveau de fidélité et débloque des remises supplémentaires.</p>
+            </div>
           </div>
         </div>
       </div>
