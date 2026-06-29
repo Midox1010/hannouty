@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '../lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
 
 type Profile = {
   full_name: string | null
@@ -91,38 +90,6 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Navbar */}
-      <nav className="bg-white border-b border-gray-200 h-14 flex items-center justify-between px-6">
-        <Link href="/products" className="flex items-center gap-2 font-semibold text-gray-900 text-base">
-          🛒 Hannouty
-        </Link>
-        <div className="flex gap-1">
-          {[
-            { label: 'Produits', href: '/products' },
-            { label: 'Mes commandes', href: '/orders' },
-            { label: 'Mon profil', href: '/profile' },
-          ].map(link => (
-            <Link key={link.href} href={link.href}
-              className={`text-sm px-4 py-1.5 rounded-md transition-colors ${
-                link.href === '/profile'
-                  ? 'bg-gray-100 text-gray-900 font-medium'
-                  : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
-              }`}>
-              {link.label}
-            </Link>
-          ))}
-        </div>
-        <div className="flex items-center gap-3">
-          <Link href="/cart" className="relative w-9 h-9 bg-gray-100 rounded-lg flex items-center justify-center text-lg hover:bg-gray-200 transition-colors">
-            🛒
-          </Link>
-          <button onClick={handleLogout}
-            className="text-sm text-gray-500 border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors">
-            Déconnexion
-          </button>
-        </div>
-      </nav>
-
       <div className="max-w-4xl mx-auto px-6 py-8">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-semibold text-gray-900">Mon profil</h1>
