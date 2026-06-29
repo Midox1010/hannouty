@@ -1,24 +1,20 @@
 'use client'
 
-import { useContext, useState } from 'react'
-import { CartContext } from '../context/CartContext'
+import { useState } from 'react'
+import { useCart } from '../context/CartContext'
 import { createClient } from '../lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
 export default function CartPage() {
-  const cart = useContext(CartContext)
+  const { cart, removeFromCart, updateQuantity, clearCart, totalItems, totalPrice } = useCart()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [discountPercent, setDiscountPercent] = useState(0)
   const router = useRouter()
   const supabase = createClient()
 
-  const items = cart?.items ?? []
-  const subtotal = items.reduce((s: number, i: any) => s + i.price * i.quantity, 0)
-  const cartCount = items.reduce((s: number, i: any) => s + i.quantity, 0)
-
-  // Récupérer le niveau de fidélité pour la remise
-  const [discountPercent, setDiscountPercent] = useState(0)
+  const subtotal = totalPrice
   const discountAmount = (subtotal * discountPercent) / 100
   const total = subtotal - discountAmount
 
@@ -53,7 +49,7 @@ export default function CartPage() {
 
       if (orderError) throw orderError
 
-      const orderItems = items.map((item: any) => ({
+      const orderItems = cart.map((item) => ({
         order_id: order.id,
         product_id: item.id,
         quantity: item.quantity,
@@ -64,7 +60,7 @@ export default function CartPage() {
       const { error: itemsError } = await supabase.from('order_items').insert(orderItems)
       if (itemsError) throw itemsError
 
-      cart?.clearCart()
+      clearCart()
       router.push('/orders')
     } catch (e: any) {
       setError(e.message ?? 'Une erreur est survenue')
@@ -94,9 +90,9 @@ export default function CartPage() {
         <div className="flex items-center gap-3">
           <Link href="/cart" className="relative w-9 h-9 bg-green-50 border border-green-200 rounded-lg flex items-center justify-center text-lg">
             🛒
-            {cartCount > 0 && (
+            {totalItems > 0 && (
               <span className="absolute -top-1 -right-1 bg-green-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
-                {cartCount}
+                {totalItems}
               </span>
             )}
           </Link>
@@ -110,7 +106,7 @@ export default function CartPage() {
       <div className="max-w-4xl mx-auto px-6 py-8">
         <h1 className="text-2xl font-semibold text-gray-900 mb-6">Mon panier</h1>
 
-        {items.length === 0 ? (
+        {cart.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-center">
             <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center text-4xl mb-4">🛒</div>
             <h2 className="text-lg font-semibold text-gray-900 mb-1">Votre panier est vide</h2>
@@ -125,10 +121,10 @@ export default function CartPage() {
             {/* Articles */}
             <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
               <div className="px-5 py-4 border-b border-gray-50">
-                <p className="text-sm font-semibold text-gray-900">{items.length} article{items.length !== 1 ? 's' : ''}</p>
+                <p className="text-sm font-semibold text-gray-900">{cart.length} article{cart.length !== 1 ? 's' : ''}</p>
               </div>
               <div className="divide-y divide-gray-50">
-                {items.map((item: any) => (
+                {cart.map((item) => (
                   <div key={item.id} className="flex items-center gap-4 px-5 py-4">
                     {/* Image */}
                     <div className="w-14 h-14 bg-gray-50 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden">
@@ -148,12 +144,12 @@ export default function CartPage() {
                     {/* Contrôle quantité */}
                     <div className="flex items-center gap-2">
                       <button
-                        onClick={() => cart?.updateQuantity(item.id, item.quantity - 1)}
+                        onClick={() => updateQuantity(item.id, item.quantity - 1)}
                         className="w-7 h-7 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-600 font-medium transition-colors"
                       >−</button>
                       <span className="text-sm font-semibold text-gray-900 w-5 text-center">{item.quantity}</span>
                       <button
-                        onClick={() => cart?.updateQuantity(item.id, item.quantity + 1)}
+                        onClick={() => updateQuantity(item.id, item.quantity + 1)}
                         className="w-7 h-7 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-600 font-medium transition-colors"
                       >+</button>
                     </div>
@@ -165,7 +161,7 @@ export default function CartPage() {
 
                     {/* Supprimer */}
                     <button
-                      onClick={() => cart?.removeItem(item.id)}
+                      onClick={() => removeFromCart(item.id)}
                       className="text-gray-300 hover:text-red-400 transition-colors text-lg leading-none"
                     >×</button>
                   </div>
