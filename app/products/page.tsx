@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect, useContext } from 'react'
+import { useState, useEffect } from 'react'
 import { createClient } from '../lib/supabase/client'
-import { CartContext } from '../context/CartContext'
+import { useCart } from '../context/CartContext'
 import Link from 'next/link'
 
 type Product = {
@@ -18,7 +18,7 @@ export default function ProductsPage() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [added, setAdded] = useState<Record<string, boolean>>({})
-  const cart = useContext(CartContext)
+  const { addToCart, totalItems } = useCart()
   const supabase = createClient()
 
   useEffect(() => {
@@ -35,7 +35,7 @@ export default function ProductsPage() {
   }, [])
 
   function handleAdd(product: Product) {
-    cart?.addItem({
+    addToCart({
       id: product.id,
       name: product.name,
       price: product.price,
@@ -44,8 +44,6 @@ export default function ProductsPage() {
     setAdded(prev => ({ ...prev, [product.id]: true }))
     setTimeout(() => setAdded(prev => ({ ...prev, [product.id]: false })), 1500)
   }
-
-  const cartCount = cart?.items?.reduce((s: number, i: any) => s + i.quantity, 0) ?? 0
 
   const filtered = products.filter(p =>
     p.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -78,9 +76,9 @@ export default function ProductsPage() {
         <div className="flex items-center gap-3">
           <Link href="/cart" className="relative w-9 h-9 bg-gray-100 rounded-lg flex items-center justify-center text-lg hover:bg-gray-200 transition-colors">
             🛒
-            {cartCount > 0 && (
+            {totalItems > 0 && (
               <span className="absolute -top-1 -right-1 bg-green-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
-                {cartCount}
+                {totalItems}
               </span>
             )}
           </Link>
