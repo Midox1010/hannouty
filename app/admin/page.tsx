@@ -10,151 +10,192 @@ type Stats = {
   pendingOrders: number
 }
 
+const STATUS: Record<string, { label: string; bg: string; color: string }> = {
+  pending:    { label: 'En attente',   bg: '#fff3e8', color: '#c45f1a' },
+  confirmed:  { label: 'Confirmée',    bg: '#dbeafe', color: '#1e40af' },
+  delivering: { label: 'En livraison', bg: '#ede9fe', color: '#5b21b6' },
+  delivered:  { label: 'Livrée',       bg: '#dcfce7', color: '#166534' },
+  cancelled:  { label: 'Annulée',      bg: '#fee2e2', color: '#991b1b' },
+}
+
 export default function AdminDashboard() {
   const supabase = createClient()
-  const [stats, setStats] = useState<Stats>({
-    totalOrders: 0,
-    totalRevenue: 0,
-    totalClients: 0,
-    pendingOrders: 0,
-  })
+  const [stats, setStats] = useState<Stats>({ totalOrders: 0, totalRevenue: 0, totalClients: 0, pendingOrders: 0 })
   const [recentOrders, setRecentOrders] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const fetchStats = async () => {
-      // Total commandes
       const { count: totalOrders } = await supabase
-        .from('orders')
-        .select('*', { count: 'exact', head: true })
+        .from('orders').select('*', { count: 'exact', head: true })
 
-      // Chiffre d'affaires
       const { data: revenueData } = await supabase
-        .from('orders')
-        .select('total_amount')
+        .from('orders').select('total_amount')
 
-      const totalRevenue = revenueData?.reduce(
-        (sum, o) => sum + (o.total_amount || 0), 0
-      ) || 0
+      const totalRevenue = revenueData?.reduce((sum, o) => sum + (o.total_amount || 0), 0) || 0
 
-      // Total clients
       const { count: totalClients } = await supabase
-        .from('profiles')
-        .select('*', { count: 'exact', head: true })
-        .eq('role', 'client')
+        .from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'client')
 
-      // Commandes en attente
       const { count: pendingOrders } = await supabase
-        .from('orders')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'pending')
+        .from('orders').select('*', { count: 'exact', head: true }).eq('status', 'pending')
 
-      // 5 dernières commandes
       const { data: recent } = await supabase
         .from('orders')
         .select('id, created_at, status, total_amount, profiles(full_name)')
         .order('created_at', { ascending: false })
         .limit(5)
 
-      setStats({
-        totalOrders: totalOrders || 0,
-        totalRevenue,
-        totalClients: totalClients || 0,
-        pendingOrders: pendingOrders || 0,
-      })
+      setStats({ totalOrders: totalOrders || 0, totalRevenue, totalClients: totalClients || 0, pendingOrders: pendingOrders || 0 })
       setRecentOrders(recent || [])
       setLoading(false)
     }
-
     fetchStats()
   }, [])
 
-  const STATUS: Record<string, { label: string; color: string }> = {
-    pending:    { label: 'En attente',   color: 'bg-yellow-100 text-yellow-700' },
-    confirmed:  { label: 'Confirmée',    color: 'bg-blue-100 text-blue-700' },
-    delivering: { label: 'En livraison', color: 'bg-purple-100 text-purple-700' },
-    delivered:  { label: 'Livrée',       color: 'bg-green-100 text-green-700' },
-    cancelled:  { label: 'Annulée',      color: 'bg-red-100 text-red-700' },
-  }
-
   if (loading) return (
-    <div className="flex justify-center items-center h-64">
-      <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-orange-500"/>
+    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 240 }}>
+      <div style={{
+        width: 36, height: 36, borderRadius: '50%',
+        border: '3px solid #dbeafe', borderTopColor: '#1d4ed8',
+        animation: 'spin 0.8s linear infinite'
+      }} />
+      <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
     </div>
   )
 
+  const today = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+
   return (
-    <div className="max-w-5xl mx-auto px-6 py-8">
-      <h1 className="text-2xl font-bold text-gray-800 mb-8">Dashboard</h1>
+    <div style={{ maxWidth: 800, margin: '0 auto', padding: '28px 24px', background: '#f8faff', minHeight: '100vh' }}>
 
-      {/* Cartes statistiques */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
-        <div className="bg-white rounded-xl border p-5 shadow-sm">
-          <p className="text-sm text-gray-400 mb-1">Commandes</p>
-          <p className="text-3xl font-bold text-gray-800">{stats.totalOrders}</p>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
+        <div>
+          <h1 style={{ fontSize: 20, fontWeight: 600, color: '#111', margin: 0 }}>Dashboard</h1>
+          <p style={{ fontSize: 12, color: '#9ca3af', margin: '4px 0 0' }}>{today}</p>
         </div>
+        <Link href="/admin/add-product" style={{
+          background: '#fbbf24', color: '#1a1a1a',
+          borderRadius: 8, padding: '8px 16px',
+          fontWeight: 600, fontSize: 13, textDecoration: 'none',
+          display: 'inline-flex', alignItems: 'center', gap: 6
+        }}>
+          + Ajouter un produit
+        </Link>
+      </div>
 
-        <div className="bg-white rounded-xl border p-5 shadow-sm">
-          <p className="text-sm text-gray-400 mb-1">Chiffre d'affaires</p>
-          <p className="text-3xl font-bold text-green-600">
-            {stats.totalRevenue.toFixed(0)}
-            <span className="text-sm font-normal text-gray-400 ml-1">MAD</span>
-          </p>
-        </div>
-
-        <div className="bg-white rounded-xl border p-5 shadow-sm">
-          <p className="text-sm text-gray-400 mb-1">Clients</p>
-          <p className="text-3xl font-bold text-gray-800">{stats.totalClients}</p>
-        </div>
-
-        <div className="bg-white rounded-xl border p-5 shadow-sm">
-          <p className="text-sm text-gray-400 mb-1">En attente</p>
-          <p className="text-3xl font-bold text-orange-500">{stats.pendingOrders}</p>
-        </div>
+      {/* Cartes stats */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 24 }}>
+        {[
+          { label: 'Commandes', value: stats.totalOrders, unit: '', accent: '#1d4ed8', bg: '#dbeafe', icon: '📦' },
+          { label: "Chiffre d'affaires", value: stats.totalRevenue.toFixed(0), unit: ' MAD', accent: '#1d4ed8', bg: '#dbeafe', icon: '📈' },
+          { label: 'Clients', value: stats.totalClients, unit: '', accent: '#1d4ed8', bg: '#dbeafe', icon: '👥' },
+          { label: 'En attente', value: stats.pendingOrders, unit: '', accent: '#c45f1a', bg: '#fff3e8', icon: '⏳' },
+        ].map((card) => (
+          <div key={card.label} style={{
+            background: '#fff', border: '0.5px solid #e5e7eb',
+            borderRadius: 12, padding: '16px',
+            borderTop: `3px solid ${card.accent}`, overflow: 'hidden'
+          }}>
+            <div style={{
+              width: 30, height: 30, borderRadius: 8,
+              background: card.bg, display: 'flex', alignItems: 'center',
+              justifyContent: 'center', fontSize: 14, marginBottom: 10
+            }}>
+              {card.icon}
+            </div>
+            <p style={{ fontSize: 11, color: '#9ca3af', margin: '0 0 4px' }}>{card.label}</p>
+            <p style={{ fontSize: 22, fontWeight: 600, color: card.accent, margin: 0 }}>
+              {card.value}
+              {card.unit && <span style={{ fontSize: 11, fontWeight: 400, color: '#9ca3af', marginLeft: 3 }}>{card.unit}</span>}
+            </p>
+          </div>
+        ))}
       </div>
 
       {/* Dernières commandes */}
-      <div className="bg-white rounded-xl border shadow-sm">
-        <div className="flex items-center justify-between px-6 py-4 border-b">
-          <h2 className="font-semibold text-gray-800">Dernières commandes</h2>
-          <Link
-            href="/admin/orders"
-            className="text-sm text-orange-500 hover:text-orange-600 transition"
-          >
+      <div style={{
+        background: '#fff', border: '0.5px solid #e5e7eb',
+        borderRadius: 12, overflow: 'hidden', marginBottom: 20
+      }}>
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '14px 18px', borderBottom: '0.5px solid #e5e7eb'
+        }}>
+          <h2 style={{ fontSize: 14, fontWeight: 600, color: '#111', margin: 0 }}>Dernières commandes</h2>
+          <Link href="/admin/orders" style={{ fontSize: 12, color: '#1d4ed8', textDecoration: 'none' }}>
             Voir tout →
           </Link>
         </div>
 
-        <div className="divide-y">
-          {recentOrders.length === 0 ? (
-            <p className="text-center text-gray-400 py-8">Aucune commande</p>
-          ) : (
-            recentOrders.map(order => {
-              const st = STATUS[order.status] ?? { label: order.status, color: 'bg-gray-100 text-gray-600' }
-              return (
-                <div key={order.id} className="flex items-center justify-between px-6 py-3">
-                  <div>
-                    <p className="text-sm font-mono text-gray-500">
-                      #{order.id.slice(0, 8).toUpperCase()}
-                    </p>
-                    <p className="text-sm text-gray-700">
-                      {order.profiles?.full_name || 'Client inconnu'}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${st.color}`}>
-                      {st.label}
-                    </span>
-                    <span className="text-sm font-bold text-gray-700">
-                      {order.total_amount.toFixed(2)} MAD
-                    </span>
-                  </div>
+        {recentOrders.length === 0 ? (
+          <p style={{ textAlign: 'center', color: '#9ca3af', padding: '32px 0', fontSize: 13 }}>Aucune commande</p>
+        ) : (
+          recentOrders.map((order) => {
+            const st = STATUS[order.status] ?? { label: order.status, bg: '#f0f0f0', color: '#555' }
+            return (
+              <div key={order.id} style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '12px 18px', borderBottom: '0.5px solid #f3f4f6', gap: 12
+              }}>
+                <div>
+                  <p style={{ fontSize: 11, fontFamily: 'monospace', color: '#9ca3af', margin: 0 }}>
+                    #{order.id.slice(0, 8).toUpperCase()}
+                  </p>
+                  <p style={{ fontSize: 13, color: '#111', margin: '2px 0 0', fontWeight: 500 }}>
+                    {order.profiles?.full_name || 'Client inconnu'}
+                  </p>
                 </div>
-              )
-            })
-          )}
-        </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <span style={{
+                    fontSize: 11, fontWeight: 600,
+                    padding: '3px 10px', borderRadius: 20,
+                    background: st.bg, color: st.color
+                  }}>
+                    {st.label}
+                  </span>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: '#111', minWidth: 90, textAlign: 'right' }}>
+                    {order.total_amount.toFixed(2)} MAD
+                  </span>
+                </div>
+              </div>
+            )
+          })
+        )}
       </div>
+
+      {/* Accès rapide */}
+      <p style={{ fontSize: 11, fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 12 }}>
+        Accès rapide
+      </p>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
+        {[
+          { href: '/admin/orders', icon: '📋', label: 'Commandes', sub: 'Gérer les statuts' },
+          { href: '/admin/products', icon: '📦', label: 'Produits', sub: 'Catalogue' },
+          { href: '/admin/clients', icon: '👥', label: 'Clients', sub: 'Niveaux fidélité' },
+          { href: '/admin/add-product', icon: '➕', label: 'Ajouter', sub: 'Nouveau produit' },
+        ].map((item) => (
+          <Link key={item.href} href={item.href} style={{
+            background: '#fff', border: '0.5px solid #e5e7eb',
+            borderRadius: 12, padding: '14px', textDecoration: 'none',
+            display: 'flex', alignItems: 'center', gap: 10
+          }}>
+            <div style={{
+              width: 32, height: 32, borderRadius: 8,
+              background: '#dbeafe', display: 'flex', alignItems: 'center',
+              justifyContent: 'center', fontSize: 15, flexShrink: 0
+            }}>
+              {item.icon}
+            </div>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: '#111' }}>{item.label}</div>
+              <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 2 }}>{item.sub}</div>
+            </div>
+          </Link>
+        ))}
+      </div>
+
     </div>
   )
 }
