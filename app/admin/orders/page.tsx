@@ -11,12 +11,16 @@ type OrderItem = {
 
 type Order = {
   id: string
+  user_id: string
   created_at: string
   status: string
   total_amount: number
-  discount_applied: number
-  profiles: { full_name: string; email: string }
+  discount_amount: number
+  final_amount: number
   order_items: OrderItem[]
+  // enrichi après
+  client_name?: string
+  client_email?: string
 }
 
 const STATUSES = [
@@ -36,22 +40,47 @@ export default function AdminOrdersPage() {
 
   useEffect(() => {
     const fetchOrders = async () => {
-      const { data, error } = await supabase
-  .from('orders')
-  .select(`
-    id, created_at, status, total_amount, discount_amount,
-    profiles ( full_name, email ),
-    order_items (
-      id, quantity, unit_price,
-      products ( name, image_url )
-    )
-  `)
-  .order('created_at', { ascending: false })
+      // 1. Récupérer les commandes
+      const { data: ordersData, error } = await supabase
+        .from('orders')
+        .select(`
+          id, user_id, created_at, status, total_amount, discount_amount, final_amount,
+          order_items (
+            id, quantity, unit_price,
+            products ( name, image_url )
+          )
+        `)
+        .order('created_at', { ascending: false })
 
-console.log('commandes:', data)
-console.log('erreur:', error)
+      if (error || !ordersData) {
+        console.error('Erreur commandes:', error)
+        setLoading(false)
+        return
+      }
 
-      setOrders((data as unknown as Order[]) || [])
+      // 2. Récupérer les profils séparément avec les user_ids
+      const userIds = [...new Set(ordersData.map(o => o.user_id).filter(Boolean))]
+
+      const { data: profilesData } = await supabase
+        .from('profiles')
+        .select('id, full_name')
+        .in('id', userIds)
+
+      // 3. Récupérer les emails depuis auth.users via une RPC ou fallback
+      // On utilise les profils qu'on a
+      const profileMap: Record<string, { full_name: string }> = {}
+      profilesData?.forEach(p => {
+        profileMap[p.id] = { full_name: p.full_name }
+      })
+
+      // 4. Enrichir les commandes avec les infos client
+      const enriched = ordersData.map(o => ({
+        ...o,
+        client_name: profileMap[o.user_id]?.full_name || 'Client inconnu',
+        client_email: '',
+      }))
+
+      setOrders(enriched as any)
       setLoading(false)
     }
 
@@ -60,7 +89,6 @@ console.log('erreur:', error)
 
   const updateStatus = async (orderId: string, newStatus: string) => {
     setUpdating(orderId)
-
     const { error } = await supabase
       .from('orders')
       .update({ status: newStatus })
@@ -71,7 +99,6 @@ console.log('erreur:', error)
         prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o)
       )
     }
-
     setUpdating(null)
   }
 
@@ -80,7 +107,7 @@ console.log('erreur:', error)
 
   if (loading) return (
     <div className="flex justify-center items-center h-64">
-      <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-orange-500"/>
+      <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-orange-500" />
     </div>
   )
 
@@ -116,7 +143,7 @@ console.log('erreur:', error)
                         #{order.id.slice(0, 8).toUpperCase()}
                       </p>
                       <p className="text-sm font-medium text-gray-700">
-                        {order.profiles?.full_name || 'Client inconnu'}
+                        {order.client_name}
                       </p>
                       <p className="text-xs text-gray-400">
                         {new Date(order.created_at).toLocaleDateString('fr-FR', {
@@ -127,7 +154,6 @@ console.log('erreur:', error)
                   </button>
 
                   <div className="flex items-center gap-3">
-                    {/* Sélecteur de statut */}
                     <select
                       value={order.status}
                       disabled={isUpdating}
@@ -141,7 +167,7 @@ console.log('erreur:', error)
                     </select>
 
                     <span className="text-sm font-bold text-gray-700 min-w-[80px] text-right">
-                      {order.total_amount.toFixed(2)} MAD
+                      {(order.final_amount ?? order.total_amount).toFixed(2)} MAD
                     </span>
 
                     <button
@@ -156,20 +182,25 @@ console.log('erreur:', error)
                 {/* Détail produits */}
                 {isOpen && (
                   <div className="border-t bg-gray-50 px-5 py-4 space-y-3">
-                    <p className="text-xs text-gray-400 mb-2">
-                      📧 {order.profiles?.email}
-                    </p>
+                    <div className="flex justify-between text-xs text-gray-400 mb-3">
+                      <span>👤 {order.client_name}</span>
+                      <span>user_id : {order.user_id.slice(0, 8)}…</span>
+                    </div>
 
                     {order.order_items.map(item => (
                       <div key={item.id} className="flex items-center gap-3">
-                        <img
-                          src={item.products.image_url}
-                          alt={item.products.name}
-                          className="w-12 h-12 object-cover rounded-lg border"
-                        />
+                        {item.products?.image_url ? (
+                          <img
+                            src={item.products.image_url}
+                            alt={item.products.name}
+                            className="w-12 h-12 object-cover rounded-lg border"
+                          />
+                        ) : (
+                          <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center text-gray-400">🛒</div>
+                        )}
                         <div className="flex-1">
                           <p className="text-sm font-medium text-gray-800">
-                            {item.products.name}
+                            {item.products?.name ?? 'Produit supprimé'}
                           </p>
                           <p className="text-xs text-gray-400">
                             {item.quantity} × {item.unit_price.toFixed(2)} MAD
@@ -181,11 +212,22 @@ console.log('erreur:', error)
                       </div>
                     ))}
 
-                    {order.discount_applied > 0 && (
-                      <p className="text-right text-sm text-green-600 font-medium pt-2 border-t">
-                        Réduction appliquée : -{order.discount_applied}%
-                      </p>
-                    )}
+                    <div className="pt-2 border-t space-y-1">
+                      <div className="flex justify-between text-xs text-gray-400">
+                        <span>Sous-total</span>
+                        <span>{order.total_amount.toFixed(2)} MAD</span>
+                      </div>
+                      {order.discount_amount > 0 && (
+                        <div className="flex justify-between text-xs text-green-600">
+                          <span>Réduction fidélité</span>
+                          <span>−{order.discount_amount.toFixed(2)} MAD</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between text-sm font-bold text-gray-700">
+                        <span>Total</span>
+                        <span>{(order.final_amount ?? order.total_amount).toFixed(2)} MAD</span>
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
