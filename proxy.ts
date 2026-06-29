@@ -22,27 +22,47 @@ export async function proxy(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   const path = request.nextUrl.pathname
 
-  if (path.startsWith('/admin')) {
-    if (!user) return NextResponse.redirect(new URL('/login', request.url))
-
+  // Récupère le rôle
+  let role = 'client'
+  if (user) {
     const { data: profile } = await supabase
       .from('profiles')
       .select('role')
       .eq('id', user.id)
       .single()
-
-    if (profile?.role !== 'admin')
-      return NextResponse.redirect(new URL('/', request.url))
+    role = profile?.role || 'client'
   }
 
-  const protectedRoutes = ['/orders', '/profile', '/cart']
-  if (protectedRoutes.some(r => path.startsWith(r)) && !user) {
-    return NextResponse.redirect(new URL('/login', request.url))
+  // --- Routes ADMIN ---
+  if (path.startsWith('/admin')) {
+    if (!user) return NextResponse.redirect(new URL('/login', request.url))
+    if (role !== 'admin') return NextResponse.redirect(new URL('/', request.url))
+  }
+
+  // --- Routes CLIENT protégées ---
+  const clientRoutes = ['/orders', '/profile', '/cart']
+  if (clientRoutes.some(r => path.startsWith(r))) {
+    if (!user) return NextResponse.redirect(new URL('/login', request.url))
+    // Si admin essaie d'accéder aux pages client → redirige vers admin
+    if (role === 'admin') return NextResponse.redirect(new URL('/admin', request.url))
+  }
+
+  // --- Page login/signup : si déjà connecté ---
+  if (path === '/login' || path === '/signup') {
+    if (user && role === 'admin') return NextResponse.redirect(new URL('/admin', request.url))
+    if (user && role === 'client') return NextResponse.redirect(new URL('/', request.url))
   }
 
   return response
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/orders/:path*', '/profile/:path*', '/cart/:path*'],
+  matcher: [
+    '/admin/:path*',
+    '/orders/:path*',
+    '/profile/:path*',
+    '/cart/:path*',
+    '/login',
+    '/signup',
+  ],
 }
