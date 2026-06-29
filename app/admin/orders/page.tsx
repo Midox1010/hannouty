@@ -44,7 +44,7 @@ export default function AdminOrdersPage() {
       const { data: ordersData, error } = await supabase
         .from('orders')
         .select(`
-          id, user_id, created_at, status, total_amount, discount_amount, final_amount,
+          id, user_id, created_at, status, total_amount, discount_amount, final_amount, profiles ( full_name, email ),
           order_items (
             id, quantity, unit_price,
             products ( name, image_url )
