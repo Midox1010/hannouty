@@ -36,7 +36,7 @@ export default function AdminOrdersPage() {
   const [expanded, setExpanded] = useState<string | null>(null)
   const [updating, setUpdating] = useState<string | null>(null)
   const [filterStatus, setFilterStatus] = useState<string>('all')
-  const [debugInfo, setDebugInfo] = useState<string>('')
+  
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -71,11 +71,6 @@ export default function AdminOrdersPage() {
 
       console.log('[DEBUG] profils récupérés:', profilesData)
       console.log('[DEBUG] erreur profils:', profilesError)
-
-      // Debug affiché dans l'UI temporairement
-      setDebugInfo(
-        `Orders: ${ordersData.length} | UserIDs: ${userIds.length} | Profils trouvés: ${profilesData?.length ?? 0}`
-      )
 
       // 4. Map id → full_name
       const profileMap: Record<string, string> = {}
@@ -134,16 +129,6 @@ export default function AdminOrdersPage() {
           </span>
         </h1>
 
-        {/* Debug banner — retire ce bloc une fois le bug résolu */}
-        {debugInfo && (
-          <div style={{
-            marginTop: 10, padding: '8px 14px', borderRadius: 8,
-            background: '#fef9c3', border: '0.5px solid #fde047',
-            fontSize: 12, color: '#854d0e', fontFamily: 'monospace'
-          }}>
-            🔍 Debug: {debugInfo} — <strong>Ouvre la console (F12) pour les détails</strong>
-          </div>
-        )}
       </div>
 
       {/* Filtres statut */}
