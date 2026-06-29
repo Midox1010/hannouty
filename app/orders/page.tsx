@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '../lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -23,6 +23,13 @@ type Order = {
   order_items: OrderItem[]
 }
 
+type Toast = {
+  id: string
+  orderId: string
+  oldStatus: string
+  newStatus: string
+}
+
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: string }> = {
   pending:    { label: 'En attente',   color: 'bg-orange-50 text-orange-700 border-orange-200',  icon: '⏳' },
   confirmed:  { label: 'Confirmée',    color: 'bg-blue-50 text-blue-700 border-blue-200',         icon: '✅' },
@@ -35,13 +42,21 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
   const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [toasts, setToasts] = useState<Toast[]>([])
   const router = useRouter()
   const supabase = createClient()
 
+  const removeToast = useCallback((id: string) => {
+    setToasts(prev => prev.filter(t => t.id !== id))
+  }, [])
+
   useEffect(() => {
+    let userId: string | null = null
+
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
+      userId = user.id
 
       const { data } = await supabase
         .from('orders')
@@ -54,12 +69,81 @@ export default function OrdersPage() {
 
       if (data) setOrders(data as any)
       setLoading(false)
+
+      // Supabase Realtime — écouter les changements de statut
+      const channel = supabase
+        .channel('orders-realtime')
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'orders',
+            filter: `user_id=eq.${user.id}`,
+          },
+          (payload) => {
+            const updated = payload.new as { id: string; status: string }
+            const old = payload.old as { id: string; status: string }
+
+            // Mettre à jour le statut dans la liste
+            setOrders(prev =>
+              prev.map(o =>
+                o.id === updated.id ? { ...o, status: updated.status } : o
+              )
+            )
+
+            // Afficher une notification toast si le statut a changé
+            if (old.status !== updated.status) {
+              const toastId = crypto.randomUUID()
+              setToasts(prev => [...prev, {
+                id: toastId,
+                orderId: updated.id,
+                oldStatus: old.status,
+                newStatus: updated.status,
+              }])
+              // Supprimer le toast après 5 secondes
+              setTimeout(() => removeToast(toastId), 5000)
+            }
+          }
+        )
+        .subscribe()
+
+      return () => {
+        supabase.removeChannel(channel)
+      }
     }
+
     load()
   }, [])
 
   return (
     <div className="min-h-screen bg-gray-50">
+
+      {/* Toasts notifications */}
+      <div className="fixed top-4 right-4 z-50 flex flex-col gap-2">
+        {toasts.map(toast => {
+          const newStatus = STATUS_CONFIG[toast.newStatus] ?? { label: toast.newStatus, icon: '•' }
+          return (
+            <div
+              key={toast.id}
+              className="bg-white border border-gray-200 rounded-2xl shadow-lg px-4 py-3 flex items-start gap-3 min-w-[300px] animate-slide-in"
+            >
+              <span className="text-2xl">{newStatus.icon}</span>
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-gray-900">Commande mise à jour</p>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  #{toast.orderId.slice(0, 8).toUpperCase()} → <span className="font-medium text-gray-700">{newStatus.label}</span>
+                </p>
+              </div>
+              <button
+                onClick={() => removeToast(toast.id)}
+                className="text-gray-300 hover:text-gray-500 text-lg leading-none mt-0.5"
+              >×</button>
+            </div>
+          )
+        })}
+      </div>
+
       <div className="max-w-3xl mx-auto px-6 py-8">
         <div className="flex items-center justify-between mb-6">
           <div>
@@ -67,6 +151,11 @@ export default function OrdersPage() {
             {!loading && (
               <p className="text-sm text-gray-400 mt-0.5">{orders.length} commande{orders.length !== 1 ? 's' : ''}</p>
             )}
+          </div>
+          {/* Indicateur temps réel */}
+          <div className="flex items-center gap-1.5 text-xs text-gray-400">
+            <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+            Mise à jour en temps réel
           </div>
         </div>
 
