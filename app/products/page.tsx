@@ -18,7 +18,7 @@ export default function ProductsPage() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [added, setAdded] = useState<Record<string, boolean>>({})
-  const { addToCart, totalItems } = useCart()
+  const { addToCart } = useCart()
   const supabase = createClient()
 
   useEffect(() => {
@@ -52,45 +52,7 @@ export default function ProductsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Navbar */}
-      <nav className="bg-white border-b border-gray-200 h-14 flex items-center justify-between px-6 sticky top-0 z-10">
-        <Link href="/products" className="flex items-center gap-2 font-semibold text-gray-900 text-base">
-          🛒 Hannouty
-        </Link>
-        <div className="flex gap-1">
-          {[
-            { label: 'Produits', href: '/products' },
-            { label: 'Mes commandes', href: '/orders' },
-            { label: 'Mon profil', href: '/profile' },
-          ].map(link => (
-            <Link key={link.href} href={link.href}
-              className={`text-sm px-4 py-1.5 rounded-md transition-colors ${
-                link.href === '/products'
-                  ? 'bg-gray-100 text-gray-900 font-medium'
-                  : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
-              }`}>
-              {link.label}
-            </Link>
-          ))}
-        </div>
-        <div className="flex items-center gap-3">
-          <Link href="/cart" className="relative w-9 h-9 bg-gray-100 rounded-lg flex items-center justify-center text-lg hover:bg-gray-200 transition-colors">
-            🛒
-            {totalItems > 0 && (
-              <span className="absolute -top-1 -right-1 bg-green-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
-                {totalItems}
-              </span>
-            )}
-          </Link>
-          <Link href="/login"
-            className="text-sm text-gray-500 border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors">
-            Déconnexion
-          </Link>
-        </div>
-      </nav>
-
       <div className="max-w-5xl mx-auto px-6 py-8">
-        {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-semibold text-gray-900">Nos produits</h1>
@@ -110,7 +72,6 @@ export default function ProductsPage() {
           </div>
         </div>
 
-        {/* Grille */}
         {loading ? (
           <div className="grid grid-cols-3 gap-4">
             {[1, 2, 3, 4, 5, 6].map(i => (
@@ -136,7 +97,6 @@ export default function ProductsPage() {
           <div className="grid grid-cols-3 gap-4">
             {filtered.map(product => (
               <div key={product.id} className="bg-white rounded-2xl border border-gray-100 overflow-hidden hover:border-gray-200 hover:shadow-sm transition-all">
-                {/* Image */}
                 <div className="h-36 flex items-center justify-center bg-gray-50 overflow-hidden">
                   {product.image_url ? (
                     <img
@@ -150,7 +110,6 @@ export default function ProductsPage() {
                   )}
                 </div>
 
-                {/* Body */}
                 <div className="p-4">
                   <p className="font-semibold text-gray-900 text-sm mb-0.5 line-clamp-1">{product.name}</p>
                   <p className="text-xs text-gray-400 mb-3 line-clamp-1">
