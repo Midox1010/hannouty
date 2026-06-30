@@ -13,6 +13,8 @@ import {
   IconLogout,
   IconMenu2,
   IconX,
+  IconHome,
+  IconUser,
 } from '@tabler/icons-react'
 
 type Profile = {
@@ -22,44 +24,58 @@ type Profile = {
 }
 
 const LEVEL_BADGE: Record<string, string> = {
-  Bronze: 'badge-bronze',
-  Argent: 'badge-silver',
-  Or:     'badge-gold',
-  Platine:'badge-platinum',
+  Bronze:  'badge-bronze',
+  Argent:  'badge-silver',
+  Or:      'badge-gold',
+  Platine: 'badge-platinum',
+}
+
+const LEVEL_GRADIENT: Record<string, string> = {
+  Bronze:  'linear-gradient(135deg,#cd7f32,#a0522d)',
+  Argent:  'linear-gradient(135deg,#b8b9bd,#7c7d80)',
+  Or:      'linear-gradient(135deg,#f7cc3a,#c98f04)',
+  Platine: 'linear-gradient(135deg,#e9e9ea,#9a9a9a)',
 }
 
 export default function Navbar() {
-  const supabase  = createClient()
-  const router    = useRouter()
-  const pathname  = usePathname()
-  const menuRef   = useRef<HTMLDivElement>(null)
+  const supabase = createClient()
+  const router   = useRouter()
+  const pathname = usePathname()
+  const sidebarRef = useRef<HTMLDivElement>(null)
 
   const [profile,  setProfile]  = useState<Profile | null>(null)
   const [loading,  setLoading]  = useState(true)
   const [scrolled, setScrolled] = useState(false)
-  const [menuOpen, setMenuOpen] = useState(false)
+  const [sideOpen, setSideOpen] = useState(false)
 
-  // ── hooks (avant tout return conditionnel) ──
+  /* scroll shadow */
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 8)
-    window.addEventListener('scroll', onScroll)
-    return () => window.removeEventListener('scroll', onScroll)
+    const fn = () => setScrolled(window.scrollY > 8)
+    window.addEventListener('scroll', fn)
+    return () => window.removeEventListener('scroll', fn)
   }, [])
 
-  // fermer menu si clic extérieur
+  /* fermer sidebar si clic en dehors */
   useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setMenuOpen(false)
+    const fn = (e: MouseEvent) => {
+      if (sidebarRef.current && !sidebarRef.current.contains(e.target as Node)) {
+        setSideOpen(false)
       }
     }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
+    document.addEventListener('mousedown', fn)
+    return () => document.removeEventListener('mousedown', fn)
   }, [])
 
-  // fermer menu au changement de page
-  useEffect(() => { setMenuOpen(false) }, [pathname])
+  /* fermer sidebar au changement de page */
+  useEffect(() => { setSideOpen(false) }, [pathname])
 
+  /* bloquer le scroll body quand sidebar ouverte */
+  useEffect(() => {
+    document.body.style.overflow = sideOpen ? 'hidden' : ''
+    return () => { document.body.style.overflow = '' }
+  }, [sideOpen])
+
+  /* fetch profile */
   useEffect(() => {
     const fetchProfile = async () => {
       const { data: { user } } = await supabase.auth.getUser()
@@ -72,82 +88,91 @@ export default function Navbar() {
       setProfile(data as any)
       setLoading(false)
     }
-
     fetchProfile()
-
     const { data: listener } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'SIGNED_OUT') { setProfile(null); setLoading(false) }
       else fetchProfile()
     })
-
     return () => listener.subscription.unsubscribe()
   }, [])
 
   const handleLogout = async () => {
-    setMenuOpen(false)
+    setSideOpen(false)
     await supabase.auth.signOut()
     router.push('/login')
   }
 
-  // ── conditions de sortie APRÈS les hooks ──
+  /* cacher navbar sur login/signup */
   if (pathname === '/login' || pathname === '/signup') return null
   if (pathname.startsWith('/admin')) return null
+
   if (loading) return <div style={{ height: 64, background: 'var(--color-bg)' }} />
 
-  // ── Desktop NavLink ──
-  const NavLink = ({ href, children, icon }: {
-    href: string; children: React.ReactNode; icon?: React.ReactNode
-  }) => {
-    const active = pathname === href
-    return (
-      <Link href={href} className={`navbar-link ${active ? 'active' : ''}`}
-        style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-        {icon}{children}
-      </Link>
-    )
-  }
+  const isAdmin = profile?.role === 'admin'
 
-  // ── Mobile NavLink ──
-  const MobileLink = ({ href, children, icon }: {
-    href: string; children: React.ReactNode; icon?: React.ReactNode
-  }) => {
+  /* lien sidebar */
+  const SideLink = ({
+    href, icon, children
+  }: { href: string; icon: React.ReactNode; children: React.ReactNode }) => {
     const active = pathname === href
     return (
       <Link
         href={href}
-        onClick={() => setMenuOpen(false)}
+        onClick={() => setSideOpen(false)}
         style={{
-          display: 'flex', alignItems: 'center', gap: 10,
-          padding: '12px 14px', borderRadius: 12,
-          color: active ? '#fff' : 'rgba(255,255,255,.75)',
-          fontWeight: active ? 600 : 500, fontSize: 15,
-          background: active ? 'rgba(255,255,255,.14)' : 'transparent',
-          transition: 'background .15s',
+          display: 'flex', alignItems: 'center', gap: 14,
+          padding: '13px 18px', borderRadius: 14,
+          color: active ? '#fff' : 'rgba(255,255,255,.78)',
+          fontWeight: active ? 700 : 500,
+          fontSize: 15,
+          background: active
+            ? 'linear-gradient(120deg,rgba(255,255,255,.18),rgba(255,255,255,.10))'
+            : 'transparent',
+          borderLeft: active ? '3px solid #f2b705' : '3px solid transparent',
+          transition: 'all .18s ease',
+          textDecoration: 'none',
         }}
       >
-        {icon}{children}
+        <span style={{ opacity: active ? 1 : 0.7, flexShrink: 0 }}>{icon}</span>
+        {children}
       </Link>
     )
   }
 
-  const isAdmin = profile?.role === 'admin'
-  const navBg   = isAdmin
-    ? 'rgba(10,16,14,0.97)'
-    : 'linear-gradient(120deg,#0a3326 0%,#0E5C3F 55%,#137a52 100%)'
-
   return (
-    <div ref={menuRef}>
-      {/* ════════════ BARRE PRINCIPALE ════════════ */}
+    <>
+      {/* ══════════════════════════════════════
+          BARRE PRINCIPALE — toujours visible
+          ══════════════════════════════════════ */}
       <nav
-        className={`navbar ${isAdmin ? 'navbar-admin' : 'navbar-client'} ${scrolled ? 'scrolled' : ''}`}
+        className={`navbar navbar-client ${scrolled ? 'scrolled' : ''}`}
         style={{
-          padding: '0 20px',
+          padding: '0 16px',
           justifyContent: 'space-between',
-          position: 'sticky', top: 0, zIndex: 200,
+          position: 'sticky', top: 0, zIndex: 300,
         }}
       >
-        {/* ── Logo ── */}
-        <Link href={isAdmin ? '/admin' : '/'} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        {/* ── Gauche : hamburger 3 traits TOUJOURS visible ── */}
+        <button
+          onClick={() => setSideOpen(o => !o)}
+          aria-label="Menu"
+          style={{
+            width: 42, height: 42, border: 'none', cursor: 'pointer',
+            background: 'rgba(255,255,255,.12)', borderRadius: 11,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: '#fff', flexShrink: 0,
+            transition: 'background .2s, transform .2s',
+            transform: sideOpen ? 'rotate(90deg)' : 'rotate(0deg)',
+          }}
+        >
+          <IconMenu2 size={22} />
+        </button>
+
+        {/* ── Centre : logo ── */}
+        <Link href="/" style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          position: 'absolute', left: '50%', transform: 'translateX(-50%)',
+        }}>
           <Image
             src="/logo.png"
             alt="Hannouty"
@@ -156,176 +181,190 @@ export default function Navbar() {
             style={{ objectFit: 'contain' }}
             priority
           />
-          {isAdmin && (
-            <span className="badge" style={{ background: 'var(--color-admin-accent)', color: '#0F172A' }}>
-              ADMIN
-            </span>
-          )}
         </Link>
 
-        {/* ── Liens desktop (cachés sur mobile) ── */}
-        <div className="nav-desktop" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          {isAdmin ? (
-            <>
-              <NavLink href="/admin"          icon={<IconLayoutDashboard size={16}/>}>Dashboard</NavLink>
-              <NavLink href="/admin/orders"   icon={<IconListDetails size={16}/>}>Commandes</NavLink>
-              <NavLink href="/admin/products" icon={<IconPackage size={16}/>}>Produits</NavLink>
-              <NavLink href="/admin/clients"  icon={<IconUsers size={16}/>}>Clients</NavLink>
-            </>
+        {/* ── Droite : panier + badge niveau ── */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {profile?.level && (
+            <span
+              className={`badge ${LEVEL_BADGE[profile.level.name] ?? ''}`}
+              style={{ fontSize: 11 }}
+            >
+              {profile.level.name}
+            </span>
+          )}
+          {profile ? (
+            <Link
+              href="/cart"
+              style={{
+                width: 42, height: 42, display: 'flex', alignItems: 'center',
+                justifyContent: 'center', borderRadius: 11,
+                background: 'rgba(255,255,255,.12)', color: '#fff',
+                transition: 'background .2s',
+              }}
+            >
+              <IconShoppingCart size={21} />
+            </Link>
           ) : (
-            <>
-              <NavLink href="/products">Produits</NavLink>
-              {profile && <NavLink href="/orders">Mes commandes</NavLink>}
-              {profile && <NavLink href="/profile">Mon profil</NavLink>}
-            </>
+            <Link href="/login" className="btn btn-gold btn-sm">
+              Connexion
+            </Link>
           )}
         </div>
-
-        {/* ── Actions desktop (cachées sur mobile) ── */}
-        <div className="nav-desktop" style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          {isAdmin ? (
-            <>
-              <span style={{ fontSize: 13, color: 'var(--color-admin-muted)' }}>{profile?.full_name}</span>
-              <button onClick={handleLogout} className="btn btn-danger btn-sm">
-                <IconLogout size={15}/>Déconnexion
-              </button>
-            </>
-          ) : profile ? (
-            <>
-              {profile.level && (
-                <span className={`badge ${LEVEL_BADGE[profile.level.name] ?? ''}`}>
-                  {profile.level.name}
-                </span>
-              )}
-              <Link href="/cart" className="btn-icon"
-                style={{ position: 'relative', background: 'rgba(255,255,255,0.12)', color: '#fff' }}>
-                <IconShoppingCart size={20}/>
-              </Link>
-              <button onClick={handleLogout} className="btn btn-outline btn-sm"
-                style={{ color: '#fff', borderColor: 'rgba(255,255,255,0.35)' }}>
-                <IconLogout size={15}/>Déconnexion
-              </button>
-            </>
-          ) : (
-            <Link href="/login" className="btn btn-gold btn-md">Connexion</Link>
-          )}
-        </div>
-
-        {/* ── Bouton hamburger (visible uniquement mobile) ── */}
-        <button
-          className="nav-hamburger"
-          onClick={() => setMenuOpen(o => !o)}
-          aria-label={menuOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
-          style={{
-            width: 40, height: 40, border: 'none', cursor: 'pointer',
-            background: 'rgba(255,255,255,.12)', borderRadius: 10,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: '#fff', flexShrink: 0,
-            transition: 'background .2s',
-          }}
-        >
-          {menuOpen ? <IconX size={20}/> : <IconMenu2 size={20}/>}
-        </button>
       </nav>
 
-      {/* ════════════ MENU MOBILE DÉROULANT ════════════ */}
+      {/* ══════════════════════════════════════
+          OVERLAY sombre derrière le sidebar
+          ══════════════════════════════════════ */}
       <div
+        onClick={() => setSideOpen(false)}
+        style={{
+          position: 'fixed', inset: 0, zIndex: 398,
+          background: 'rgba(0,0,0,.45)',
+          backdropFilter: 'blur(3px)',
+          opacity: sideOpen ? 1 : 0,
+          pointerEvents: sideOpen ? 'all' : 'none',
+          transition: 'opacity .3s ease',
+        }}
+      />
+
+      {/* ══════════════════════════════════════
+          SIDEBAR — glisse depuis la gauche
+          ══════════════════════════════════════ */}
+      <div
+        ref={sidebarRef}
         style={{
           position: 'fixed',
-          top: 64,
-          left: 0, right: 0,
-          zIndex: 199,
-          background: isAdmin ? '#0a100d' : '#0a3326',
-          borderBottom: '1px solid rgba(255,255,255,.08)',
+          top: 0, left: 0, bottom: 0,
+          width: 280,
+          zIndex: 399,
+          background: 'linear-gradient(180deg,#0a3326 0%,#0E5C3F 60%,#0a3326 100%)',
+          boxShadow: sideOpen ? '8px 0 32px rgba(0,0,0,.45)' : 'none',
+          transform: sideOpen ? 'translateX(0)' : 'translateX(-100%)',
+          transition: 'transform .32s cubic-bezier(0.22,1,0.36,1)',
+          display: 'flex',
+          flexDirection: 'column',
           overflow: 'hidden',
-          maxHeight: menuOpen ? '520px' : '0px',
-          transition: 'max-height .35s cubic-bezier(0.22,1,0.36,1)',
-          boxShadow: menuOpen ? '0 10px 30px rgba(0,0,0,.4)' : 'none',
         }}
       >
-        <div style={{ padding: '10px 12px 20px' }}>
-
-          {/* Liens nav */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginBottom: 14 }}>
-            {isAdmin ? (
-              <>
-                <MobileLink href="/admin"          icon={<IconLayoutDashboard size={18}/>}>Dashboard</MobileLink>
-                <MobileLink href="/admin/orders"   icon={<IconListDetails size={18}/>}>Commandes</MobileLink>
-                <MobileLink href="/admin/products" icon={<IconPackage size={18}/>}>Produits</MobileLink>
-                <MobileLink href="/admin/clients"  icon={<IconUsers size={18}/>}>Clients</MobileLink>
-              </>
-            ) : (
-              <>
-                <MobileLink href="/products"       icon={<IconPackage size={18}/>}>Produits</MobileLink>
-                {profile && <MobileLink href="/cart"    icon={<IconShoppingCart size={18}/>}>Mon panier</MobileLink>}
-                {profile && <MobileLink href="/orders"  icon={<IconListDetails size={18}/>}>Mes commandes</MobileLink>}
-                {profile && <MobileLink href="/profile" icon={<IconUsers size={18}/>}>Mon profil</MobileLink>}
-              </>
-            )}
+        {/* ── En-tête sidebar ── */}
+        <div style={{
+          padding: '18px 18px 14px',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          borderBottom: '1px solid rgba(255,255,255,.10)',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <Image src="/logo.png" alt="Hannouty" width={36} height={36}
+              style={{ objectFit: 'contain' }} />
+            <span style={{
+              fontSize: 17, fontWeight: 800, color: '#fff', letterSpacing: '-0.02em',
+            }}>Hannouty</span>
           </div>
+          <button
+            onClick={() => setSideOpen(false)}
+            style={{
+              width: 34, height: 34, border: 'none', cursor: 'pointer',
+              background: 'rgba(255,255,255,.12)', borderRadius: 9,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: '#fff',
+            }}
+          >
+            <IconX size={18} />
+          </button>
+        </div>
 
-          {/* Séparateur */}
-          <div style={{ height: 1, background: 'rgba(255,255,255,.08)', marginBottom: 14 }}/>
-
-          {/* Bas : utilisateur + déconnexion */}
-          {profile ? (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                {/* Avatar initiales */}
-                <div style={{
-                  width: 36, height: 36, borderRadius: '50%',
-                  background: 'rgba(255,255,255,.15)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 13, fontWeight: 700, color: '#fff', flexShrink: 0,
-                }}>
-                  {profile.full_name?.charAt(0).toUpperCase() ?? '?'}
-                </div>
-                <div>
-                  <div style={{ fontSize: 13.5, fontWeight: 600, color: '#fff' }}>
-                    {profile.full_name}
-                  </div>
-                  {profile.level && (
-                    <span className={`badge ${LEVEL_BADGE[profile.level.name] ?? ''}`}
-                      style={{ fontSize: 10, marginTop: 2 }}>
-                      {profile.level.name}
-                    </span>
-                  )}
-                </div>
+        {/* ── Profil utilisateur ── */}
+        {profile && (
+          <div style={{
+            margin: '14px 14px 4px',
+            padding: '14px 16px',
+            background: 'rgba(255,255,255,.07)',
+            borderRadius: 16,
+            border: '1px solid rgba(255,255,255,.10)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{
+                width: 42, height: 42, borderRadius: '50%',
+                background: profile.level
+                  ? LEVEL_GRADIENT[profile.level.name] ?? 'rgba(255,255,255,.2)'
+                  : 'rgba(255,255,255,.2)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 17, fontWeight: 800, color: '#fff', flexShrink: 0,
+              }}>
+                {profile.full_name?.charAt(0).toUpperCase() ?? '?'}
               </div>
-              <button
-                onClick={handleLogout}
-                className="btn btn-danger btn-sm"
-                style={{ flexShrink: 0 }}
-              >
-                <IconLogout size={15}/>Déconnexion
-              </button>
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: '#fff' }}>
+                  {profile.full_name}
+                </div>
+                {profile.level && (
+                  <span className={`badge ${LEVEL_BADGE[profile.level.name] ?? ''}`}
+                    style={{ fontSize: 10, marginTop: 3, display: 'inline-flex' }}>
+                    {profile.level.name}
+                  </span>
+                )}
+              </div>
             </div>
+          </div>
+        )}
+
+        {/* ── Liens de navigation ── */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '10px 10px' }}>
+          <p style={{
+            fontSize: 10.5, fontWeight: 700, color: 'rgba(255,255,255,.4)',
+            letterSpacing: '0.1em', textTransform: 'uppercase',
+            padding: '8px 18px 4px',
+          }}>Navigation</p>
+
+          <SideLink href="/"         icon={<IconHome size={20}/>}>Accueil</SideLink>
+          <SideLink href="/products" icon={<IconPackage size={20}/>}>Produits</SideLink>
+
+          {profile && (
+            <>
+              <SideLink href="/cart"    icon={<IconShoppingCart size={20}/>}>Mon panier</SideLink>
+              <SideLink href="/orders"  icon={<IconListDetails size={20}/>}>Mes commandes</SideLink>
+              <SideLink href="/profile" icon={<IconUser size={20}/>}>Mon profil</SideLink>
+            </>
+          )}
+        </div>
+
+        {/* ── Bas : déconnexion ou connexion ── */}
+        <div style={{
+          padding: '14px 14px 28px',
+          borderTop: '1px solid rgba(255,255,255,.10)',
+        }}>
+          {profile ? (
+            <button
+              onClick={handleLogout}
+              style={{
+                width: '100%', display: 'flex', alignItems: 'center',
+                justifyContent: 'center', gap: 10,
+                padding: '13px', borderRadius: 14, border: 'none',
+                background: 'rgba(229,56,59,.85)', color: '#fff',
+                fontSize: 14.5, fontWeight: 700, cursor: 'pointer',
+                transition: 'background .2s',
+              }}
+            >
+              <IconLogout size={18} />
+              Déconnexion
+            </button>
           ) : (
             <Link
               href="/login"
-              onClick={() => setMenuOpen(false)}
-              className="btn btn-gold btn-lg"
-              style={{ width: '100%', justifyContent: 'center' }}
+              onClick={() => setSideOpen(false)}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                gap: 10, padding: '13px', borderRadius: 14,
+                background: 'linear-gradient(135deg,#f7cc3a,#f2b705)',
+                color: '#1a1a1a', fontSize: 14.5, fontWeight: 700,
+                boxShadow: '0 4px 14px rgba(242,183,5,.4)',
+              }}
             >
               Se connecter
             </Link>
           )}
         </div>
       </div>
-
-      {/* ════════════ CSS RESPONSIVE ════════════ */}
-      <style>{`
-        /* Desktop : liens visibles, hamburger caché */
-        @media (min-width: 769px) {
-          .nav-desktop   { display: flex !important; }
-          .nav-hamburger { display: none  !important; }
-        }
-        /* Mobile : liens cachés, hamburger visible */
-        @media (max-width: 768px) {
-          .nav-desktop   { display: none  !important; }
-          .nav-hamburger { display: flex  !important; }
-        }
-      `}</style>
-    </div>
+    </>
   )
 }
