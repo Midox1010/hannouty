@@ -92,13 +92,6 @@ export default function Navbar() {
   // ── conditions de sortie APRÈS les hooks ──
   if (pathname === '/login' || pathname === '/signup') return null
   if (pathname.startsWith('/admin')) return null
-  if (
-    pathname.startsWith('/products') ||
-    pathname.startsWith('/cart') ||
-    pathname.startsWith('/orders') ||
-    pathname.startsWith('/profile')
-  ) return null
-
   if (loading) return <div style={{ height: 64, background: 'var(--color-bg)' }} />
 
   // ── Desktop NavLink ──
