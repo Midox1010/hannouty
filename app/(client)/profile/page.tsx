@@ -3,6 +3,15 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '../../lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import {
+  IconUser,
+  IconMail,
+  IconPhone,
+  IconShoppingBag,
+  IconCoin,
+  IconTrophy,
+  IconLogout,
+} from '@tabler/icons-react'
 
 type Profile = {
   full_name: string | null
@@ -19,11 +28,15 @@ type Stats = {
 }
 
 const LEVELS = [
-  { name: 'Bronze',  emoji: '🥉', discount: 0,  threshold: 0   },
-  { name: 'Argent',  emoji: '🥈', discount: 5,  threshold: 120 },
-  { name: 'Or',      emoji: '🥇', discount: 10, threshold: 300 },
-  { name: 'Platine', emoji: '💎', discount: 15, threshold: 600 },
+  { name: 'Bronze',  emoji: '🥉', discount: 0,  threshold: 0,   badgeClass: 'badge-bronze'   },
+  { name: 'Argent',  emoji: '🥈', discount: 5,  threshold: 120, badgeClass: 'badge-silver'   },
+  { name: 'Or',      emoji: '🥇', discount: 10, threshold: 300, badgeClass: 'badge-gold'     },
+  { name: 'Platine', emoji: '💎', discount: 15, threshold: 600, badgeClass: 'badge-platinum' },
 ]
+
+const LOYALTY_CARD_CLASS: Record<string, string> = {
+  Bronze: 'bronze', Argent: 'silver', Or: 'gold', Platine: 'platinum',
+}
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState<Profile | null>(null)
@@ -71,8 +84,8 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <p className="text-gray-400 text-sm">Chargement...</p>
+      <div className="flex-center" style={{ minHeight: '60vh' }}>
+        <div className="spinner spinner-lg" />
       </div>
     )
   }
@@ -89,113 +102,194 @@ export default function ProfilePage() {
     .split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || '?'
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto px-6 py-8">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-semibold text-gray-900">Mon profil</h1>
-        </div>
+    <div className="container animate-fade-in" style={{ paddingBlock: 'var(--space-xl)' }}>
 
-        <div className="grid grid-cols-2 gap-4">
-          {/* Carte infos */}
-          <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-            <div className="flex items-center gap-4 p-5 border-b border-gray-100">
-              <div className="w-14 h-14 rounded-full bg-green-100 text-green-700 text-xl font-semibold flex items-center justify-center flex-shrink-0">
-                {initials}
-              </div>
-              <div>
-                <p className="font-semibold text-gray-900 text-base">{profile?.full_name ?? 'Sans nom'}</p>
-                <p className="text-sm text-gray-400 mt-0.5">{email}</p>
-              </div>
+      {/* Header */}
+      <div style={{ marginBottom: 'var(--space-xl)' }}>
+        <h1>Mon profil</h1>
+        <p className="text-muted" style={{ marginTop: 4 }}>Gérez vos informations personnelles et suivez votre fidélité</p>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-lg)', alignItems: 'start' }}>
+
+        {/* Carte infos personnelles */}
+        <div className="card" style={{ overflow: 'hidden' }}>
+
+          {/* En-tête avatar */}
+          <div style={{
+            background: 'linear-gradient(135deg, var(--color-brand-green) 0%, var(--color-brand-green-mid) 100%)',
+            padding: 'var(--space-xl) var(--space-lg)',
+            display: 'flex', alignItems: 'center', gap: 'var(--space-md)',
+          }}>
+            <div className="avatar avatar-lg" style={{
+              background: 'var(--color-brand-gold)',
+              color: 'var(--color-brand-green)',
+              fontSize: '1.5rem',
+              border: '3px solid rgba(255,255,255,0.3)',
+            }}>
+              {initials}
             </div>
-
-            <div className="px-5 py-2">
-              {[
-                { label: 'Nom complet', value: profile?.full_name, muted: !profile?.full_name },
-                { label: 'Email', value: email },
-                { label: 'Téléphone', value: null, muted: true },
-              ].map((row, i) => (
-                <div key={i} className="flex items-center justify-between py-3 border-b border-gray-50 last:border-0">
-                  <span className="text-xs text-gray-400">{row.label}</span>
-                  <span className={`text-sm font-medium ${row.muted ? 'text-gray-300 italic font-normal' : 'text-gray-900'}`}>
-                    {row.value ?? 'Non renseigné'}
-                  </span>
-                </div>
-              ))}
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 p-4 pt-2">
-              <div className="bg-gray-50 rounded-xl p-3">
-                <p className="text-xs text-gray-400 mb-1">Commandes</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.order_count}</p>
-              </div>
-              <div className="bg-gray-50 rounded-xl p-3">
-                <p className="text-xs text-gray-400 mb-1">Total dépensé</p>
-                <p className="text-xl font-bold text-gray-900">{stats.total_spent.toFixed(0)} <span className="text-sm font-normal text-gray-400">MAD</span></p>
-              </div>
-            </div>
-
-            <div className="px-4 pb-4">
-              <button onClick={handleLogout}
-                className="w-full text-sm text-red-500 border border-red-200 hover:bg-red-50 py-2.5 rounded-xl transition-colors font-medium">
-                Se déconnecter
-              </button>
+            <div>
+              <p style={{ color: '#fff', fontWeight: 700, fontSize: '1.1rem', lineHeight: 1.2 }}>
+                {profile?.full_name ?? 'Sans nom'}
+              </p>
+              <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.875rem', marginTop: 2 }}>{email}</p>
+              <span className={`badge ${currentLevel.badgeClass}`} style={{ marginTop: 8, display: 'inline-flex' }}>
+                {currentLevel.emoji} {currentLevel.name}
+              </span>
             </div>
           </div>
 
-          {/* Carte niveau */}
-          <div className="bg-white rounded-2xl border border-gray-200 p-5">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <span className="text-3xl">{currentLevel.emoji}</span>
-                <div>
-                  <p className="text-xs text-gray-400">Niveau actuel</p>
-                  <p className="text-xl font-bold text-gray-900">{currentLevel.name}</p>
+          {/* Infos */}
+          <div style={{ padding: 'var(--space-md) var(--space-lg)' }}>
+            {[
+              { icon: IconUser,  label: 'Nom complet', value: profile?.full_name, muted: !profile?.full_name },
+              { icon: IconMail,  label: 'Email',        value: email },
+              { icon: IconPhone, label: 'Téléphone',    value: null, muted: true },
+            ].map((row, i) => (
+              <div key={i} style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: 'var(--space-md) 0',
+                borderBottom: i < 2 ? '1px solid var(--color-border)' : 'none',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'var(--color-text-muted)' }}>
+                  <row.icon size={16} />
+                  <span style={{ fontSize: '0.875rem' }}>{row.label}</span>
                 </div>
+                <span style={{
+                  fontSize: '0.875rem', fontWeight: 500,
+                  color: row.muted ? 'var(--color-text-muted)' : 'var(--color-text-primary)',
+                  fontStyle: row.muted ? 'italic' : 'normal',
+                }}>
+                  {row.value ?? 'Non renseigné'}
+                </span>
               </div>
-              <div className="bg-green-50 text-green-700 text-sm font-semibold px-3 py-1.5 rounded-full">
-                {currentLevel.discount}% de remise
+            ))}
+          </div>
+
+          {/* Stats */}
+          <div style={{
+            display: 'grid', gridTemplateColumns: '1fr 1fr',
+            gap: 'var(--space-md)', padding: 'var(--space-md) var(--space-lg)',
+            background: 'var(--color-bg)', borderTop: '1px solid var(--color-border)',
+          }}>
+            <div className="card card-stat" style={{ padding: 'var(--space-md)', boxShadow: 'none' }}>
+              <div className="stat-icon" style={{ background: 'var(--color-brand-green-pale)', color: 'var(--color-brand-green)', width: 36, height: 36, margin: 0 }}>
+                <IconShoppingBag size={18} />
+              </div>
+              <div className="stat-value" style={{ fontSize: '1.75rem', marginTop: 6 }}>{stats.order_count}</div>
+              <div className="stat-label">Commandes</div>
+            </div>
+            <div className="card card-stat" style={{ padding: 'var(--space-md)', boxShadow: 'none' }}>
+              <div className="stat-icon" style={{ background: 'var(--color-brand-green-pale)', color: 'var(--color-brand-green)', width: 36, height: 36, margin: 0 }}>
+                <IconCoin size={18} />
+              </div>
+              <div className="stat-value" style={{ fontSize: '1.5rem', marginTop: 6 }}>
+                {stats.total_spent.toFixed(0)}
+                <span style={{ fontSize: '0.8rem', fontWeight: 500, color: 'var(--color-text-muted)', marginLeft: 3 }}>MAD</span>
+              </div>
+              <div className="stat-label">Total dépensé</div>
+            </div>
+          </div>
+
+          {/* Déconnexion */}
+          <div style={{ padding: 'var(--space-md) var(--space-lg)', borderTop: '1px solid var(--color-border)' }}>
+            <button onClick={handleLogout} className="btn btn-danger btn-md" style={{ width: '100%' }}>
+              <IconLogout size={16} />
+              Se déconnecter
+            </button>
+          </div>
+        </div>
+
+        {/* Carte fidélité */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-lg)' }}>
+
+          {/* Loyalty card visuelle */}
+          <div className={`loyalty-card ${LOYALTY_CARD_CLASS[currentLevel.name] ?? 'bronze'}`}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 'var(--space-lg)' }}>
+              <div>
+                <p className="level-name">Niveau fidélité</p>
+                <p style={{ fontSize: '2rem', fontWeight: 900, letterSpacing: '-0.03em', lineHeight: 1, marginTop: 4 }}>
+                  {currentLevel.emoji} {currentLevel.name}
+                </p>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <p style={{ fontSize: '0.75rem', opacity: 0.7, marginBottom: 2 }}>Remise</p>
+                <p className="level-discount">{currentLevel.discount}%</p>
               </div>
             </div>
+
+            <p style={{ fontSize: '0.8rem', opacity: 0.6, marginBottom: 8 }}>
+              {profile?.full_name ?? email}
+            </p>
 
             {nextLevel ? (
               <>
-                <p className="text-xs text-gray-400 mb-2">
-                  Progression vers {nextLevel.emoji} {nextLevel.name} ({nextLevel.discount}%)
+                <p style={{ fontSize: '0.75rem', opacity: 0.65, marginBottom: 6 }}>
+                  Progression vers {nextLevel.emoji} {nextLevel.name}
                 </p>
-                <div className="h-2 bg-gray-100 rounded-full overflow-hidden mb-1.5">
-                  <div
-                    className="h-full bg-green-500 rounded-full transition-all"
-                    style={{ width: `${progressPercent}%` }}
-                  />
+                <div style={{ height: 6, background: 'rgba(255,255,255,0.2)', borderRadius: 99, overflow: 'hidden' }}>
+                  <div style={{
+                    height: '100%', borderRadius: 99,
+                    background: 'rgba(255,255,255,0.8)',
+                    width: `${progressPercent}%`,
+                    transition: 'width 0.6s var(--ease-out)',
+                  }} />
                 </div>
-                <p className="text-xs text-gray-400">
-                  {stats.total_spent.toFixed(0)} MAD / {nextLevel.threshold} MAD
-                  &nbsp;·&nbsp; encore {Math.max(0, nextLevel.threshold - stats.total_spent).toFixed(0)} MAD
+                <p style={{ fontSize: '0.75rem', opacity: 0.6, marginTop: 6 }}>
+                  {stats.total_spent.toFixed(0)} / {nextLevel.threshold} MAD · encore {Math.max(0, nextLevel.threshold - stats.total_spent).toFixed(0)} MAD
                 </p>
               </>
             ) : (
-              <p className="text-sm text-green-600 font-medium">🎉 Niveau maximum atteint !</p>
+              <p style={{ fontSize: '0.875rem', fontWeight: 600, opacity: 0.9 }}>🎉 Niveau maximum atteint !</p>
             )}
+          </div>
 
-            <div className="grid grid-cols-4 gap-2 mt-5">
-              {LEVELS.map((lvl, i) => (
-                <div key={lvl.name}
-                  className={`text-center py-2.5 px-1 rounded-xl border text-xs font-medium transition-colors ${
-                    i === currentLevelIdx
-                      ? 'bg-green-50 border-green-200 text-green-700'
-                      : i < currentLevelIdx
-                      ? 'bg-gray-50 border-gray-100 text-gray-400'
-                      : 'border-gray-100 text-gray-300'
-                  }`}>
-                  <div className="text-lg mb-1">{lvl.emoji}</div>
-                  {lvl.name}
-                </div>
-              ))}
+          {/* Niveaux */}
+          <div className="card" style={{ padding: 'var(--space-lg)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 'var(--space-md)' }}>
+              <IconTrophy size={18} style={{ color: 'var(--color-brand-gold)' }} />
+              <p style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--color-text-primary)' }}>Niveaux disponibles</p>
             </div>
 
-            <div className="mt-4 bg-green-50 rounded-xl p-3 text-xs text-green-700">
-              <p className="font-medium mb-0.5">Comment progresser ?</p>
-              <p className="text-green-600">Chaque commande passée augmente votre niveau de fidélité et débloque des remises supplémentaires.</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {LEVELS.map((lvl, i) => {
+                const isActive = i === currentLevelIdx
+                const isDone = i < currentLevelIdx
+                return (
+                  <div key={lvl.name} style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    padding: '10px 14px', borderRadius: 'var(--radius-md)',
+                    background: isActive ? 'var(--color-brand-green-pale)' : 'var(--color-bg)',
+                    border: `1px solid ${isActive ? 'var(--color-brand-green-light)' : 'var(--color-border)'}`,
+                    opacity: i > currentLevelIdx ? 0.5 : 1,
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <span style={{ fontSize: '1.1rem' }}>{lvl.emoji}</span>
+                      <div>
+                        <p style={{ fontSize: '0.875rem', fontWeight: isActive ? 700 : 500, color: isActive ? 'var(--color-brand-green)' : 'var(--color-text-primary)' }}>
+                          {lvl.name}
+                          {isActive && <span style={{ marginLeft: 6, fontSize: '0.7rem', background: 'var(--color-brand-green)', color: '#fff', padding: '1px 6px', borderRadius: 99 }}>Actuel</span>}
+                          {isDone && <span style={{ marginLeft: 6, fontSize: '0.7rem', color: 'var(--color-text-muted)' }}>✓</span>}
+                        </p>
+                        <p style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
+                          {lvl.threshold === 0 ? "Dès l'inscription" : `À partir de ${lvl.threshold} MAD`}
+                        </p>
+                      </div>
+                    </div>
+                    <span style={{
+                      fontWeight: 700, fontSize: '0.875rem',
+                      color: isActive ? 'var(--color-brand-green)' : 'var(--color-text-muted)',
+                    }}>
+                      {lvl.discount > 0 ? `-${lvl.discount}%` : '—'}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+
+            <div className="alert alert-info" style={{ marginTop: 'var(--space-md)', fontSize: '0.8rem' }}>
+              💡 Chaque commande augmente votre niveau et débloque des remises supplémentaires.
             </div>
           </div>
         </div>
