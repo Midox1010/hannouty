@@ -23,15 +23,25 @@ export default function LoginPage() {
     setLoading(true)
     setError('')
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    const { data: authData, error } = await supabase.auth.signInWithPassword({ email, password })
 
     if (error) {
       setError('Email ou mot de passe incorrect.')
       setLoading(false)
-    } else {
-      setSuccess(true)
-      setTimeout(() => router.push('/products'), 800)
+      return
     }
+
+    // On vérifie le rôle AVANT de rediriger
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', authData.user.id)
+      .single()
+
+    setSuccess(true)
+
+    const destination = profile?.role === 'admin' ? '/admin' : '/products'
+    setTimeout(() => router.push(destination), 800)
   }
 
   return (
