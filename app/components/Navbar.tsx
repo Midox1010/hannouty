@@ -36,6 +36,12 @@ export default function Navbar() {
 
   if (pathname === '/login' || pathname === '/signup') return null
   if (pathname.startsWith('/admin')) return null
+  if (
+  pathname.startsWith('/products') ||
+  pathname.startsWith('/cart') ||
+  pathname.startsWith('/orders') ||
+  pathname.startsWith('/profile')
+  ) return null
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8)
