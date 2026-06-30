@@ -29,15 +29,22 @@ export default function RootLayout({
         <script
           dangerouslySetInnerHTML={{
             __html: `
-              window.addEventListener('error', function(e) {
-                if (e.message && (e.message.includes('Loading chunk') || e.message.includes('Failed to fetch'))) {
-                  window.location.reload();
-                }
-              });
-              window.addEventListener('unhandledrejection', function(e) {
-                if (e.reason && e.reason.message && (e.reason.message.includes('Loading chunk') || e.reason.message.includes('Failed to fetch') || e.reason.message.includes('dynamically imported module'))) {
-                  window.location.reload();
-                }
+              async function checkVersion() {
+                try {
+                  const res = await fetch('/version', { cache: 'no-store' });
+                  const data = await res.json();
+                  const stored = localStorage.getItem('app_version');
+                  if (stored && stored !== String(data.version)) {
+                    localStorage.setItem('app_version', String(data.version));
+                    window.location.reload();
+                  } else if (!stored) {
+                    localStorage.setItem('app_version', String(data.version));
+                  }
+                } catch (e) {}
+              }
+              checkVersion();
+              document.addEventListener('visibilitychange', function() {
+                if (document.visibilityState === 'visible') checkVersion();
               });
             `,
           }}
