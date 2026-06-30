@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { createClient } from '../lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { IconMail, IconLock, IconUser, IconEye, IconEyeOff, IconLoader2 } from '@tabler/icons-react'
 
 export default function SignupPage() {
@@ -62,10 +63,26 @@ export default function SignupPage() {
         <div style={{ position: 'absolute', top: -60, right: -60, width: 240, height: 240, borderRadius: '50%', background: 'var(--color-brand-gold)', opacity: 0.08 }} />
         <div style={{ position: 'absolute', bottom: -80, left: -40, width: 200, height: 200, borderRadius: '50%', background: 'var(--color-brand-gold)', opacity: 0.06 }} />
 
-        {/* Logo */}
+        {/* Logo — petit, en haut */}
         <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ width: 36, height: 36, borderRadius: 10, background: 'var(--color-brand-gold)', color: 'var(--color-brand-green)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 18 }}>H</span>
+          <span style={{
+            width: 36, height: 36, borderRadius: 10, background: '#fff',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 4, flexShrink: 0,
+          }}>
+            <Image src="/logo.png" alt="Hannouty" width={36} height={36} style={{ objectFit: 'contain', width: '100%', height: '100%' }} priority />
+          </span>
           <span style={{ color: '#fff', fontSize: '1.25rem', fontWeight: 800, letterSpacing: '-0.03em' }}>Hannouty</span>
+        </div>
+
+        {/* Logo — grand format, bien visible, centré */}
+        <div style={{ position: 'relative', zIndex: 1, display: 'flex', justifyContent: 'center' }}>
+          <div style={{
+            width: 160, height: 160, borderRadius: 'var(--radius-xl)', background: '#fff',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 14,
+            boxShadow: '0 12px 40px rgba(0,0,0,0.25)',
+          }}>
+            <Image src="/logo.png" alt="Hannouty - Votre épicerie en ligne" width={132} height={132} style={{ objectFit: 'contain', width: '100%', height: '100%' }} priority />
+          </div>
         </div>
 
         {/* Contenu */}
