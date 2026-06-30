@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/app/lib/supabase/client'
 import {
@@ -81,13 +82,40 @@ export default function Navbar() {
     )
   }
 
+  // Logo rond avec fond blanc, pour ressortir sur fonds colorés
+  const LogoBadge = ({ size = 32 }: { size?: number }) => (
+    <span
+      style={{
+        width: size,
+        height: size,
+        borderRadius: size * 0.28,
+        background: '#fff',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0,
+        overflow: 'hidden',
+        padding: 3,
+      }}
+    >
+      <Image
+        src="/logo.png"
+        alt="Hannouty"
+        width={size}
+        height={size}
+        style={{ objectFit: 'contain', width: '100%', height: '100%' }}
+        priority
+      />
+    </span>
+  )
+
   // ── NAVBAR ADMIN ──
   if (profile?.role === 'admin') {
     return (
       <nav className={`navbar navbar-admin ${scrolled ? 'scrolled' : ''}`} style={{ padding: '0 28px', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <span className="navbar-brand" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ width: 30, height: 30, borderRadius: 8, background: 'var(--color-brand-gold)', color: 'var(--color-brand-green)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 15 }}>H</span>
+            <LogoBadge size={30} />
             Hannouty
           </span>
           <span className="badge" style={{ background: 'var(--color-admin-accent)', color: '#0F172A' }}>ADMIN</span>
@@ -112,7 +140,7 @@ export default function Navbar() {
   return (
     <nav className={`navbar navbar-client ${scrolled ? 'scrolled' : ''}`} style={{ padding: '0 28px', justifyContent: 'space-between' }}>
       <Link href="/" className="navbar-brand" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <span style={{ width: 32, height: 32, borderRadius: 9, background: 'var(--color-brand-gold)', color: 'var(--color-brand-green)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 16 }}>H</span>
+        <LogoBadge size={32} />
         Hannouty
       </Link>
       <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>

@@ -6,6 +6,11 @@ import { CartProvider } from './context/CartContext'
 export const metadata: Metadata = {
   title: 'Hannouty - Supermarché en ligne',
   description: 'Vos produits alimentaires livrés à domicile',
+  icons: {
+    icon: '/logo.png',
+    shortcut: '/logo.png',
+    apple: '/logo.png',
+  },
 }
 
 export default function RootLayout({
