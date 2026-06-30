@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '../../lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import { IconPackage, IconCheck } from '@tabler/icons-react'
 
 export default function AddProductPage() {
   const [formData, setFormData] = useState({
@@ -13,24 +14,21 @@ export default function AddProductPage() {
     image_url: '',
   })
   const [loading, setLoading] = useState(false)
-  const [message, setMessage] = useState('')
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [user, setUser] = useState<any>(null)
 
   const router = useRouter()
   const supabase = createClient()
 
-  // Vérifier si l'utilisateur est connecté
   useEffect(() => {
     const checkUser = async () => {
       const { data: { user } } = await supabase.auth.getUser()
-      
       if (!user) {
-        router.push('/login') // Rediriger vers login si non connecté
+        router.push('/login')
       } else {
         setUser(user)
       }
     }
-
     checkUser()
   }, [])
 
@@ -44,7 +42,7 @@ export default function AddProductPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
-    setMessage('')
+    setMessage(null)
 
     const { error } = await supabase.from('products').insert({
       name: formData.name,
@@ -56,9 +54,9 @@ export default function AddProductPage() {
     })
 
     if (error) {
-      setMessage('Erreur: ' + error.message)
+      setMessage({ type: 'error', text: 'Erreur : ' + error.message })
     } else {
-      setMessage('Produit ajouté avec succès !')
+      setMessage({ type: 'success', text: 'Produit ajouté avec succès !' })
       setFormData({
         name: '',
         description: '',
@@ -71,95 +69,135 @@ export default function AddProductPage() {
     setLoading(false)
   }
 
-  // Afficher un message de chargement pendant la vérification
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p>Vérification de la connexion...</p>
+      <div className="flex-center" style={{ minHeight: '60vh' }}>
+        <div className="spinner spinner-lg" />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-xl mx-auto">
-        <h1 className="text-3xl font-bold mb-8">Ajouter un Produit</h1>
+    <div className="container animate-fade-in" style={{ paddingBlock: 'var(--space-xl)', maxWidth: 600 }}>
 
-        <form onSubmit={handleSubmit} className="bg-white p-8 rounded-xl shadow-md space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">Nom du produit</label>
+      <div style={{ marginBottom: 'var(--space-xl)' }}>
+        <h1>Ajouter un produit</h1>
+        <p className="text-muted" style={{ marginTop: 4 }}>
+          Renseignez les informations du nouveau produit
+        </p>
+      </div>
+
+      <form onSubmit={handleSubmit} className="card" style={{ padding: 'var(--space-xl)' }}>
+
+        <div className="form-group" style={{ marginBottom: 'var(--space-md)' }}>
+          <label className="form-label">
+            Nom du produit<span className="required">*</span>
+          </label>
+          <input
+            type="text"
+            name="name"
+            value={formData.name}
+            onChange={handleChange}
+            className="form-input"
+            required
+          />
+        </div>
+
+        <div className="form-group" style={{ marginBottom: 'var(--space-md)' }}>
+          <label className="form-label">Description</label>
+          <textarea
+            name="description"
+            value={formData.description}
+            onChange={handleChange}
+            className="form-textarea"
+            rows={3}
+          />
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-md)', marginBottom: 'var(--space-md)' }}>
+          <div className="form-group">
+            <label className="form-label">
+              Prix (MAD)<span className="required">*</span>
+            </label>
             <input
-              type="text"
-              name="name"
-              value={formData.name}
+              type="number"
+              name="price"
+              value={formData.price}
               onChange={handleChange}
-              className="w-full p-3 border rounded-lg"
+              className="form-input"
+              step="0.01"
               required
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium mb-1">Description</label>
-            <textarea
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-              className="w-full p-3 border rounded-lg"
-              rows={3}
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">Prix (€)</label>
-              <input
-                type="number"
-                name="price"
-                value={formData.price}
-                onChange={handleChange}
-                className="w-full p-3 border rounded-lg"
-                step="0.01"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1">Stock</label>
-              <input
-                type="number"
-                name="stock_quantity"
-                value={formData.stock_quantity}
-                onChange={handleChange}
-                className="w-full p-3 border rounded-lg"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1">URL de l'image (optionnel)</label>
+          <div className="form-group">
+            <label className="form-label">Stock</label>
             <input
-              type="text"
-              name="image_url"
-              value={formData.image_url}
+              type="number"
+              name="stock_quantity"
+              value={formData.stock_quantity}
               onChange={handleChange}
-              className="w-full p-3 border rounded-lg"
-              placeholder="https://..."
+              className="form-input"
             />
           </div>
+        </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 disabled:bg-gray-400"
-          >
-            {loading ? 'Ajout en cours...' : 'Ajouter le produit'}
-          </button>
+        <div className="form-group" style={{ marginBottom: 'var(--space-lg)' }}>
+          <label className="form-label">URL de l'image</label>
+          <input
+            type="text"
+            name="image_url"
+            value={formData.image_url}
+            onChange={handleChange}
+            className="form-input"
+            placeholder="https://..."
+          />
+          <p className="form-hint">Optionnel — une icône par défaut sera utilisée sinon</p>
+        </div>
 
-          {message && (
-            <p className="text-center text-sm mt-4 text-green-600">{message}</p>
+        {formData.image_url && (
+          <div style={{ marginBottom: 'var(--space-lg)', display: 'flex', justifyContent: 'center' }}>
+            <img
+              src={formData.image_url}
+              alt="Aperçu"
+              style={{
+                width: 100, height: 100, objectFit: 'cover',
+                borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)',
+              }}
+              onError={e => { (e.target as HTMLImageElement).style.display = 'none' }}
+            />
+          </div>
+        )}
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="btn btn-primary btn-lg"
+          style={{ width: '100%' }}
+        >
+          {loading ? (
+            <>
+              <div className="spinner" style={{ borderTopColor: '#fff', borderColor: 'rgba(255,255,255,.3)' }} />
+              Ajout en cours…
+            </>
+          ) : (
+            <>
+              <IconPackage size={18} />
+              Ajouter le produit
+            </>
           )}
-        </form>
-      </div>
+        </button>
+
+        {message && (
+          <div
+            className={`alert ${message.type === 'success' ? 'alert-success' : 'alert-error'}`}
+            style={{ marginTop: 'var(--space-lg)' }}
+          >
+            {message.type === 'success' && <IconCheck size={18} />}
+            {message.text}
+          </div>
+        )}
+      </form>
     </div>
   )
 }
