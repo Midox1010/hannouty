@@ -30,7 +30,12 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{
             __html: `
               window.addEventListener('error', function(e) {
-                if (e.message && e.message.includes('Loading chunk')) {
+                if (e.message && (e.message.includes('Loading chunk') || e.message.includes('Failed to fetch'))) {
+                  window.location.reload();
+                }
+              });
+              window.addEventListener('unhandledrejection', function(e) {
+                if (e.reason && e.reason.message && (e.reason.message.includes('Loading chunk') || e.reason.message.includes('Failed to fetch') || e.reason.message.includes('dynamically imported module'))) {
                   window.location.reload();
                 }
               });
