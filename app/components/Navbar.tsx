@@ -34,6 +34,7 @@ export default function Navbar() {
   const [loading, setLoading] = useState(true)
   const [scrolled, setScrolled] = useState(false)
 
+  // ── Masquer la navbar sur login et signup ──
   if (pathname === '/login' || pathname === '/signup') return null
 
   useEffect(() => {
@@ -81,21 +82,42 @@ export default function Navbar() {
     )
   }
 
+  // Logo rond avec fond blanc, pour ressortir sur fonds colorés
+  const LogoBadge = ({ size = 32 }: { size?: number }) => (
+    <span
+      style={{
+        width: size,
+        height: size,
+        borderRadius: size * 0.28,
+        background: '#fff',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0,
+        overflow: 'hidden',
+        padding: 3,
+      }}
+    >
+      <Image
+        src="/logo.png"
+        alt="Hannouty"
+        width={size}
+        height={size}
+        style={{ objectFit: 'contain', width: '100%', height: '100%' }}
+        priority
+      />
+    </span>
+  )
+
   // ── NAVBAR ADMIN ──
   if (profile?.role === 'admin') {
     return (
       <nav className={`navbar navbar-admin ${scrolled ? 'scrolled' : ''}`} style={{ padding: '0 28px', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <Link href="/admin" style={{ display: 'flex', alignItems: 'center' }}>
-            <Image
-              src="/logo.png"
-              alt="Hannouty"
-              width={44}
-              height={44}
-              style={{ objectFit: 'contain', width: 44, height: 44 }}
-              priority
-            />
-          </Link>
+          <span className="navbar-brand" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <LogoBadge size={30} />
+            Hannouty
+          </span>
           <span className="badge" style={{ background: 'var(--color-admin-accent)', color: '#0F172A' }}>ADMIN</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -117,17 +139,10 @@ export default function Navbar() {
   // ── NAVBAR CLIENT ──
   return (
     <nav className={`navbar navbar-client ${scrolled ? 'scrolled' : ''}`} style={{ padding: '0 28px', justifyContent: 'space-between' }}>
-      <Link href="/" style={{ display: 'flex', alignItems: 'center' }}>
-        <Image
-          src="/logo.png"
-          alt="Hannouty"
-          width={48}
-          height={48}
-          style={{ objectFit: 'contain', width: 48, height: 48 }}
-          priority
-        />
+      <Link href="/" className="navbar-brand" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <LogoBadge size={32} />
+        Hannouty
       </Link>
-
       <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
         <NavLink href="/products">Produits</NavLink>
         {profile && (
@@ -137,7 +152,6 @@ export default function Navbar() {
           </>
         )}
       </div>
-
       <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
         {profile ? (
           <>
