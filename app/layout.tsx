@@ -26,6 +26,17 @@ export default function RootLayout({
   return (
     <html lang="fr">
       <body>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.addEventListener('error', function(e) {
+                if (e.message && e.message.includes('Loading chunk')) {
+                  window.location.reload();
+                }
+              });
+            `,
+          }}
+        />
         <CartProvider>
           <Navbar />
           {children}
