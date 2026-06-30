@@ -1267,3 +1267,22 @@ p {
     transition-duration: 0.01ms !important;
   }
 }
+/* ── INPUT AVEC ICÔNE (login / signup) ───────── */
+.form-input-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.form-input-icon .form-input {
+  padding-left: 42px;
+  width: 100%;
+}
+
+.form-input-icon .input-icon {
+  position: absolute;
+  left: 14px;
+  color: var(--color-text-muted);
+  pointer-events: none;
+  flex-shrink: 0;
+}
