@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { createClient } from '../lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { IconMail, IconLock, IconEye, IconEyeOff, IconLoader2 } from '@tabler/icons-react'
 
 export default function LoginPage() {
   const [email, setEmail]       = useState('')
@@ -33,240 +34,153 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex" style={{ fontFamily: 'Inter, sans-serif' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', background: 'var(--color-bg)' }}>
 
-      {/* ── Panneau gauche décoratif ── */}
-      <div className="hidden lg:flex lg:w-[46%] flex-col justify-between p-12 relative overflow-hidden"
-        style={{ background: 'linear-gradient(145deg, #1B2A6B 0%, #0f1a45 100%)' }}>
-
-        {/* Cercles décoratifs */}
-        <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full opacity-10"
-          style={{ background: '#F4C542' }} />
-        <div className="absolute -bottom-32 -left-16 w-80 h-80 rounded-full opacity-10"
-          style={{ background: '#F4C542' }} />
-        <div className="absolute top-1/2 right-8 w-32 h-32 rounded-full opacity-5"
-          style={{ background: '#ffffff' }} />
+      {/* ── Panneau gauche ── */}
+      <div
+        className="animate-fade-in"
+        style={{
+          width: '44%',
+          background: 'linear-gradient(145deg, var(--color-brand-green) 0%, var(--color-brand-green-mid) 100%)',
+          padding: 'var(--space-2xl)',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          position: 'relative',
+          overflow: 'hidden',
+        }}
+      >
+        {/* Cercles déco */}
+        <div style={{ position: 'absolute', top: -60, right: -60, width: 240, height: 240, borderRadius: '50%', background: 'var(--color-brand-gold)', opacity: 0.08 }} />
+        <div style={{ position: 'absolute', bottom: -80, left: -40, width: 200, height: 200, borderRadius: '50%', background: 'var(--color-brand-gold)', opacity: 0.06 }} />
 
         {/* Logo */}
-        <div className="relative z-10">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center font-black text-lg"
-              style={{ background: '#F4C542', color: '#1B2A6B' }}>H</div>
-            <span className="text-white text-2xl font-bold tracking-tight">Hannouty</span>
-          </div>
-          <p className="text-white/50 text-sm ml-13">Votre supermarché en ligne</p>
+        <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ width: 36, height: 36, borderRadius: 10, background: 'var(--color-brand-gold)', color: 'var(--color-brand-green)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 18 }}>H</span>
+          <span style={{ color: '#fff', fontSize: '1.25rem', fontWeight: 800, letterSpacing: '-0.03em' }}>Hannouty</span>
         </div>
 
-        {/* Contenu central */}
-        <div className="relative z-10">
-          <div className="mb-6">
-            <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-6"
-              style={{ background: 'rgba(244,197,66,0.15)', border: '1px solid rgba(244,197,66,0.3)' }}>
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#F4C542" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
-                <line x1="3" y1="6" x2="21" y2="6"/>
-                <path d="M16 10a4 4 0 0 1-8 0"/>
-              </svg>
-            </div>
-            <h2 className="text-white text-3xl font-bold leading-tight mb-3">
-              Bienvenue sur<br />
-              <span style={{ color: '#F4C542' }}>Hannouty</span>
-            </h2>
-            <p className="text-white/60 text-base leading-relaxed">
-              Faites vos courses en ligne et profitez de notre programme de fidélité exclusif.
-            </p>
-          </div>
-
-          {/* Features */}
-          <div className="space-y-3">
+        {/* Contenu */}
+        <div style={{ position: 'relative', zIndex: 1 }}>
+          <h2 style={{ color: '#fff', fontSize: 'clamp(1.5rem, 3vw, 2rem)', fontWeight: 800, lineHeight: 1.2, marginBottom: 'var(--space-md)' }}>
+            Bienvenue sur<br />
+            <span style={{ color: 'var(--color-brand-gold)' }}>Hannouty</span>
+          </h2>
+          <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: 'var(--space-lg)' }}>
+            Faites vos courses en ligne et profitez de notre programme de fidélité exclusif.
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
             {[
               { icon: '🛒', text: 'Catalogue de produits frais et locaux' },
               { icon: '🏆', text: 'Programme fidélité Bronze → Platine' },
               { icon: '🚚', text: 'Livraison rapide à domicile' },
             ].map((f, i) => (
-              <div key={i} className="flex items-center gap-3 p-3 rounded-xl"
-                style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                <span className="text-xl">{f.icon}</span>
-                <span className="text-white/75 text-sm">{f.text}</span>
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)', padding: '10px 14px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 'var(--radius-md)' }}>
+                <span style={{ fontSize: '1.1rem' }}>{f.icon}</span>
+                <span style={{ color: 'rgba(255,255,255,0.75)', fontSize: '0.875rem' }}>{f.text}</span>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="relative z-10">
-          <p className="text-white/30 text-xs">© 2026 Hannouty · Tous droits réservés</p>
-        </div>
+        <p style={{ position: 'relative', zIndex: 1, color: 'rgba(255,255,255,0.25)', fontSize: '0.75rem' }}>
+          © 2026 Hannouty · Tous droits réservés
+        </p>
       </div>
 
-      {/* ── Panneau droit : formulaire ── */}
-      <div className="flex-1 flex flex-col justify-center items-center px-8 py-12"
-        style={{ background: '#f8fafc' }}>
+      {/* ── Panneau droit (formulaire) ── */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 'var(--space-2xl)' }}>
+        <div style={{ width: '100%', maxWidth: 420 }} className="animate-slide-up">
 
-        {/* Logo mobile */}
-        <div className="lg:hidden flex items-center gap-2 mb-10">
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center font-black"
-            style={{ background: '#F4C542', color: '#1B2A6B' }}>H</div>
-          <span className="text-xl font-bold" style={{ color: '#1B2A6B' }}>Hannouty</span>
-        </div>
+          <h1 style={{ marginBottom: 'var(--space-xs)', fontSize: '1.875rem' }}>Connexion</h1>
+          <p className="text-muted" style={{ marginBottom: 'var(--space-xl)' }}>
+            Entrez vos identifiants pour accéder à votre compte
+          </p>
 
-        <div className="w-full max-w-md">
-
-          {/* Heading */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold mb-2" style={{ color: '#1B2A6B', letterSpacing: '-0.02em' }}>
-              Connexion
-            </h1>
-            <p className="text-gray-500 text-sm">Entrez vos identifiants pour accéder à votre compte</p>
-          </div>
-
-          {/* Success state */}
+          {/* Success */}
           {success && (
-            <div className="mb-6 p-4 rounded-2xl flex items-center gap-3 animate-pulse"
-              style={{ background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
-              <span className="text-2xl">✅</span>
-              <div>
-                <p className="text-sm font-semibold text-green-800">Connexion réussie !</p>
-                <p className="text-xs text-green-600">Redirection en cours…</p>
-              </div>
+            <div className="alert alert-success animate-slide-up" style={{ marginBottom: 'var(--space-lg)' }}>
+              ✅ Connexion réussie ! Redirection…
             </div>
           )}
 
           {/* Error */}
           {error && (
-            <div className="mb-5 p-4 rounded-2xl flex items-center gap-3"
-              style={{ background: '#fef2f2', border: '1px solid #fecaca' }}>
-              <span className="text-lg">⚠️</span>
-              <p className="text-sm text-red-700 font-medium">{error}</p>
+            <div className="alert alert-error animate-slide-up" style={{ marginBottom: 'var(--space-lg)' }}>
+              {error}
             </div>
           )}
 
-          {/* Form */}
-          <form onSubmit={handleLogin} className="space-y-5">
+          <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
 
             {/* Email */}
-            <div>
-              <label className="block text-sm font-semibold mb-2" style={{ color: '#1B2A6B' }}>
-                Adresse email
-              </label>
-              <div className="relative">
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect width="20" height="16" x="2" y="4" rx="2"/>
-                    <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
-                  </svg>
-                </div>
+            <div className="form-group">
+              <label className="form-label">Adresse email</label>
+              <div className="form-input-icon">
+                <IconMail size={17} className="input-icon" />
                 <input
                   type="email"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
                   placeholder="votre@email.com"
                   required
-                  className="w-full pl-11 pr-4 py-3.5 rounded-2xl text-sm transition-all"
-                  style={{
-                    background: '#fff',
-                    border: '1.5px solid #e2e8f0',
-                    color: '#1B2A6B',
-                    outline: 'none',
-                  }}
-                  onFocus={e => { e.target.style.borderColor = '#1B2A6B'; e.target.style.boxShadow = '0 0 0 3px rgba(27,42,107,0.1)' }}
-                  onBlur={e  => { e.target.style.borderColor = '#e2e8f0'; e.target.style.boxShadow = 'none' }}
+                  className="form-input"
                 />
               </div>
             </div>
 
             {/* Mot de passe */}
-            <div>
-              <label className="block text-sm font-semibold mb-2" style={{ color: '#1B2A6B' }}>
-                Mot de passe
-              </label>
-              <div className="relative">
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                  </svg>
-                </div>
+            <div className="form-group">
+              <label className="form-label">Mot de passe</label>
+              <div className="form-input-icon">
+                <IconLock size={17} className="input-icon" />
                 <input
                   type={showPwd ? 'text' : 'password'}
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   placeholder="••••••••"
                   required
-                  className="w-full pl-11 pr-12 py-3.5 rounded-2xl text-sm transition-all"
-                  style={{
-                    background: '#fff',
-                    border: '1.5px solid #e2e8f0',
-                    color: '#1B2A6B',
-                    outline: 'none',
-                  }}
-                  onFocus={e => { e.target.style.borderColor = '#1B2A6B'; e.target.style.boxShadow = '0 0 0 3px rgba(27,42,107,0.1)' }}
-                  onBlur={e  => { e.target.style.borderColor = '#e2e8f0'; e.target.style.boxShadow = 'none' }}
+                  className="form-input"
+                  style={{ paddingRight: 44 }}
                 />
-                <button type="button" onClick={() => setShowPwd(!showPwd)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
-                  {showPwd
-                    ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-                    : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                  }
+                <button
+                  type="button"
+                  onClick={() => setShowPwd(!showPwd)}
+                  style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-muted)', display: 'flex', padding: 2 }}
+                >
+                  {showPwd ? <IconEyeOff size={17} /> : <IconEye size={17} />}
                 </button>
               </div>
             </div>
 
-            {/* Submit */}
             <button
               type="submit"
               disabled={loading || success}
-              className="w-full py-4 rounded-2xl font-bold text-sm transition-all relative overflow-hidden"
-              style={{
-                background: loading || success ? '#94a3b8' : '#F4C542',
-                color: '#1B2A6B',
-                boxShadow: loading || success ? 'none' : '0 4px 14px rgba(244,197,66,0.4)',
-                transform: 'translateY(0)',
-                cursor: loading || success ? 'not-allowed' : 'pointer',
-              }}
-              onMouseEnter={e => { if (!loading && !success) (e.target as HTMLElement).style.transform = 'translateY(-1px)' }}
-              onMouseLeave={e => { (e.target as HTMLElement).style.transform = 'translateY(0)' }}
+              className="btn btn-primary btn-lg"
+              style={{ width: '100%', marginTop: 'var(--space-xs)' }}
             >
-              {loading ? (
-                <span className="flex items-center justify-center gap-2">
-                  <svg className="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-                  </svg>
-                  Connexion en cours…
-                </span>
-              ) : success ? '✓ Connecté !' : 'Se connecter →'}
+              {loading
+                ? <><IconLoader2 size={18} style={{ animation: 'spin 0.7s linear infinite' }} /> Connexion…</>
+                : success ? '✓ Connecté !'
+                : 'Se connecter →'
+              }
             </button>
           </form>
 
-          {/* Divider */}
-          <div className="flex items-center gap-4 my-6">
-            <div className="flex-1 h-px" style={{ background: '#e2e8f0' }} />
-            <span className="text-xs text-gray-400">ou</span>
-            <div className="flex-1 h-px" style={{ background: '#e2e8f0' }} />
-          </div>
+          <div className="divider-text" style={{ marginBlock: 'var(--space-lg)' }}>ou</div>
 
-          {/* Lien inscription */}
-          <div className="text-center">
-            <p className="text-sm text-gray-500">
-              Pas encore de compte ?{' '}
-              <Link href="/signup"
-                className="font-bold transition-colors"
-                style={{ color: '#1B2A6B' }}
-                onMouseEnter={e => (e.target as HTMLElement).style.color = '#F4C542'}
-                onMouseLeave={e => (e.target as HTMLElement).style.color = '#1B2A6B'}
-              >
-                Créer un compte
-              </Link>
-            </p>
-          </div>
+          <p style={{ textAlign: 'center', fontSize: '0.9rem', color: 'var(--color-text-secondary)' }}>
+            Pas encore de compte ?{' '}
+            <Link href="/signup" style={{ color: 'var(--color-brand-green)', fontWeight: 700 }}>
+              Créer un compte
+            </Link>
+          </p>
 
-          {/* Retour boutique */}
-          <div className="text-center mt-4">
-            <Link href="/products" className="text-xs text-gray-400 hover:text-gray-600 transition-colors">
+          <p style={{ textAlign: 'center', marginTop: 'var(--space-sm)' }}>
+            <Link href="/products" className="text-muted" style={{ fontSize: '0.8125rem' }}>
               ← Continuer sans compte
             </Link>
-          </div>
+          </p>
         </div>
       </div>
     </div>
