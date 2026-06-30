@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useCart } from '../context/CartContext'
-import { createClient } from '../lib/supabase/client'
+import { useCart } from '../../context/CartContext'
+import { createClient } from '../../lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {

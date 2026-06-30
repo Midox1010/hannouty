@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { createClient } from '../lib/supabase/client'
-import { useCart } from '../context/CartContext'
+import { createClient } from '../../lib/supabase/client'
+import { useCart } from '../../context/CartContext'
 import { IconSearch, IconX, IconShoppingBag, IconCheck, IconPlus } from '@tabler/icons-react'
 
 type Product = {
