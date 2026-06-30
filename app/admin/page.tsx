@@ -2,6 +2,17 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/app/lib/supabase/client'
 import Link from 'next/link'
+import {
+  IconPackage,
+  IconCoin,
+  IconUsers,
+  IconClock,
+  IconArrowRight,
+  IconUser,
+  IconListDetails,
+  IconShoppingBag,
+  IconPlus,
+} from '@tabler/icons-react'
 
 type Stats = {
   totalOrders: number
@@ -10,22 +21,35 @@ type Stats = {
   pendingOrders: number
 }
 
-const STATUS: Record<string, { label: string; bg: string; color: string }> = {
-  pending:    { label: 'En attente',   bg: '#fff3e8', color: '#c45f1a' },
-  confirmed:  { label: 'Confirmée',    bg: '#dbeafe', color: '#1e40af' },
-  delivering: { label: 'En livraison', bg: '#ede9fe', color: '#5b21b6' },
-  delivered:  { label: 'Livrée',       bg: '#dcfce7', color: '#166534' },
-  cancelled:  { label: 'Annulée',      bg: '#fee2e2', color: '#991b1b' },
+const STATUS: Record<string, { label: string; badgeClass: string }> = {
+  pending:    { label: 'En attente',   badgeClass: 'badge-pending' },
+  confirmed:  { label: 'Confirmée',    badgeClass: 'badge-confirmed' },
+  delivering: { label: 'En livraison', badgeClass: 'badge-shipped' },
+  delivered:  { label: 'Livrée',       badgeClass: 'badge-delivered' },
+  cancelled:  { label: 'Annulée',      badgeClass: 'badge-cancelled' },
 }
 
 export default function AdminDashboard() {
   const supabase = createClient()
   const [stats, setStats] = useState<Stats>({ totalOrders: 0, totalRevenue: 0, totalClients: 0, pendingOrders: 0 })
   const [recentOrders, setRecentOrders] = useState<any[]>([])
+  const [firstName, setFirstName] = useState('Admin')
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const fetchStats = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('id', user.id)
+          .single()
+        if (profile?.full_name) {
+          setFirstName(profile.full_name.split(' ')[0])
+        }
+      }
+
       const { count: totalOrders } = await supabase
         .from('orders').select('*', { count: 'exact', head: true })
 
@@ -42,7 +66,7 @@ export default function AdminDashboard() {
 
       const { data: recent } = await supabase
         .from('orders')
-        .select('id, created_at, status, total_amount, profiles(full_name)')
+        .select('id, created_at, status, total_amount, profiles!orders_user_id_fkey(full_name)')
         .order('created_at', { ascending: false })
         .limit(5)
 
@@ -53,109 +77,140 @@ export default function AdminDashboard() {
     fetchStats()
   }, [])
 
-  if (loading) return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 240 }}>
-      <div style={{
-        width: 36, height: 36, borderRadius: '50%',
-        border: '3px solid #dbeafe', borderTopColor: '#1d4ed8',
-        animation: 'spin 0.8s linear infinite'
-      }} />
-      <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
-    </div>
-  )
-
-  const today = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+  if (loading) {
+    return (
+      <div className="flex-center" style={{ minHeight: '60vh' }}>
+        <div className="spinner spinner-lg" />
+      </div>
+    )
+  }
 
   return (
-    <div style={{ maxWidth: 800, margin: '0 auto', padding: '28px 24px', background: '#f8faff', minHeight: '100vh' }}>
+    <div className="container animate-fade-in" style={{ paddingBlock: 'var(--space-xl)' }}>
 
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
+      {/* ── Header ── */}
+      <div className="flex-between" style={{ marginBottom: 'var(--space-xl)', flexWrap: 'wrap', gap: 'var(--space-md)' }}>
         <div>
-          <h1 style={{ fontSize: 20, fontWeight: 600, color: '#111', margin: 0 }}>Dashboard</h1>
-          <p style={{ fontSize: 12, color: '#9ca3af', margin: '4px 0 0' }}>{today}</p>
+          <h1>Bonjour, {firstName}</h1>
+          <p className="text-muted" style={{ marginTop: 4 }}>
+            Voici un aperçu de l'activité de votre boutique
+          </p>
         </div>
-        <Link href="/admin/add-product" style={{
-          background: '#fbbf24', color: '#1a1a1a',
-          borderRadius: 8, padding: '8px 16px',
-          fontWeight: 600, fontSize: 13, textDecoration: 'none',
-          display: 'inline-flex', alignItems: 'center', gap: 6
-        }}>
-          + Ajouter un produit
+        <Link href="/admin/add-product" className="btn btn-gold btn-md">
+          <IconPlus size={18} />
+          Ajouter un produit
         </Link>
       </div>
 
-      {/* Cartes stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 24 }}>
-        {[
-          { label: 'Commandes', value: stats.totalOrders, unit: '', accent: '#1d4ed8', bg: '#dbeafe', icon: '📦' },
-          { label: "Chiffre d'affaires", value: stats.totalRevenue.toFixed(0), unit: ' MAD', accent: '#1d4ed8', bg: '#dbeafe', icon: '📈' },
-          { label: 'Clients', value: stats.totalClients, unit: '', accent: '#1d4ed8', bg: '#dbeafe', icon: '👥' },
-          { label: 'En attente', value: stats.pendingOrders, unit: '', accent: '#c45f1a', bg: '#fff3e8', icon: '⏳' },
-        ].map((card) => (
-          <div key={card.label} style={{
-            background: '#fff', border: '0.5px solid #e5e7eb',
-            borderRadius: 12, padding: '16px',
-            borderTop: `3px solid ${card.accent}`, overflow: 'hidden'
-          }}>
-            <div style={{
-              width: 30, height: 30, borderRadius: 8,
-              background: card.bg, display: 'flex', alignItems: 'center',
-              justifyContent: 'center', fontSize: 14, marginBottom: 10
-            }}>
-              {card.icon}
-            </div>
-            <p style={{ fontSize: 11, color: '#9ca3af', margin: '0 0 4px' }}>{card.label}</p>
-            <p style={{ fontSize: 22, fontWeight: 600, color: card.accent, margin: 0 }}>
-              {card.value}
-              {card.unit && <span style={{ fontSize: 11, fontWeight: 400, color: '#9ca3af', marginLeft: 3 }}>{card.unit}</span>}
-            </p>
+      {/* ── Cartes stats ── */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+          gap: 'var(--space-md)',
+          marginBottom: 'var(--space-xl)',
+        }}
+      >
+        {/* Commandes */}
+        <div className="card card-stat">
+          <div className="stat-icon" style={{ background: 'var(--color-brand-green-pale)', color: 'var(--color-brand-green)' }}>
+            <IconPackage size={22} />
           </div>
-        ))}
+          <div className="stat-value">{stats.totalOrders}</div>
+          <div className="stat-label">Commandes</div>
+        </div>
+
+        {/* Chiffre d'affaires — fond plein bleu */}
+        <div
+          className="card card-stat"
+          style={{
+            background: 'linear-gradient(135deg, var(--color-brand-green) 0%, var(--color-brand-green-mid) 100%)',
+            border: 'none',
+          }}
+        >
+          <div className="stat-icon" style={{ background: 'var(--color-brand-gold)', color: 'var(--color-brand-green)' }}>
+            <IconCoin size={22} />
+          </div>
+          <div className="stat-value" style={{ color: 'var(--color-brand-gold)' }}>
+            {stats.totalRevenue.toFixed(0)}
+            <span style={{ fontSize: '0.95rem', fontWeight: 600, marginLeft: 4, opacity: 0.85 }}>MAD</span>
+          </div>
+          <div className="stat-label" style={{ color: 'rgba(255,255,255,0.75)' }}>Chiffre d'affaires</div>
+        </div>
+
+        {/* Clients */}
+        <div className="card card-stat">
+          <div className="stat-icon" style={{ background: 'var(--color-brand-green-pale)', color: 'var(--color-brand-green)' }}>
+            <IconUsers size={22} />
+          </div>
+          <div className="stat-value">{stats.totalClients}</div>
+          <div className="stat-label">Clients</div>
+        </div>
+
+        {/* En attente — fond jaune pâle */}
+        <div
+          className="card card-stat"
+          style={{ background: '#FEF6E2', border: '1px solid var(--color-brand-gold)' }}
+        >
+          <div className="stat-icon" style={{ background: 'var(--color-brand-gold)', color: 'var(--color-brand-green)' }}>
+            <IconClock size={22} />
+          </div>
+          <div className="stat-value" style={{ color: 'var(--color-brand-gold-deep)' }}>{stats.pendingOrders}</div>
+          <div className="stat-label">En attente</div>
+        </div>
       </div>
 
-      {/* Dernières commandes */}
-      <div style={{
-        background: '#fff', border: '0.5px solid #e5e7eb',
-        borderRadius: 12, overflow: 'hidden', marginBottom: 20
-      }}>
-        <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '14px 18px', borderBottom: '0.5px solid #e5e7eb'
-        }}>
-          <h2 style={{ fontSize: 14, fontWeight: 600, color: '#111', margin: 0 }}>Dernières commandes</h2>
-          <Link href="/admin/orders" style={{ fontSize: 12, color: '#1d4ed8', textDecoration: 'none' }}>
-            Voir tout →
+      {/* ── Dernières commandes ── */}
+      <div className="card" style={{ marginBottom: 'var(--space-xl)' }}>
+        <div
+          className="flex-between"
+          style={{
+            padding: 'var(--space-md) var(--space-lg)',
+            borderBottom: '1px solid var(--color-border)',
+          }}
+        >
+          <h3 style={{ fontSize: '1rem' }}>Dernières commandes</h3>
+          <Link href="/admin/orders" className="navbar-link" style={{ color: 'var(--color-brand-green)', display: 'flex', alignItems: 'center', gap: 4 }}>
+            Voir tout <IconArrowRight size={14} />
           </Link>
         </div>
 
         {recentOrders.length === 0 ? (
-          <p style={{ textAlign: 'center', color: '#9ca3af', padding: '32px 0', fontSize: 13 }}>Aucune commande</p>
+          <div className="empty-state">
+            <div className="empty-icon"><IconShoppingBag size={40} /></div>
+            <h3>Aucune commande</h3>
+            <p>Les nouvelles commandes apparaîtront ici</p>
+          </div>
         ) : (
           recentOrders.map((order) => {
-            const st = STATUS[order.status] ?? { label: order.status, bg: '#f0f0f0', color: '#555' }
+            const st = STATUS[order.status] ?? { label: order.status, badgeClass: 'badge-pending' }
             return (
-              <div key={order.id} style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                padding: '12px 18px', borderBottom: '0.5px solid #f3f4f6', gap: 12
-              }}>
-                <div>
-                  <p style={{ fontSize: 11, fontFamily: 'monospace', color: '#9ca3af', margin: 0 }}>
-                    #{order.id.slice(0, 8).toUpperCase()}
-                  </p>
-                  <p style={{ fontSize: 13, color: '#111', margin: '2px 0 0', fontWeight: 500 }}>
-                    {order.profiles?.full_name || 'Client inconnu'}
-                  </p>
+              <div
+                key={order.id}
+                className="flex-between"
+                style={{
+                  padding: 'var(--space-md) var(--space-lg)',
+                  borderBottom: '1px solid var(--color-border)',
+                  gap: 'var(--space-md)',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)' }}>
+                  <div className="avatar avatar-sm">
+                    <IconUser size={16} />
+                  </div>
+                  <div>
+                    <p style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--color-text-primary)' }}>
+                      {order.profiles?.full_name || 'Client inconnu'}
+                    </p>
+                    <p className="text-muted" style={{ fontSize: '0.75rem', fontFamily: 'var(--font-mono)' }}>
+                      #{order.id.slice(0, 8).toUpperCase()}
+                    </p>
+                  </div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <span style={{
-                    fontSize: 11, fontWeight: 600,
-                    padding: '3px 10px', borderRadius: 20,
-                    background: st.bg, color: st.color
-                  }}>
-                    {st.label}
-                  </span>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: '#111', minWidth: 90, textAlign: 'right' }}>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)' }}>
+                  <span className={`badge ${st.badgeClass}`}>{st.label}</span>
+                  <span style={{ fontWeight: 700, color: 'var(--color-brand-green)', minWidth: 90, textAlign: 'right' }}>
                     {order.total_amount.toFixed(2)} MAD
                   </span>
                 </div>
@@ -165,32 +220,32 @@ export default function AdminDashboard() {
         )}
       </div>
 
-      {/* Accès rapide */}
-      <p style={{ fontSize: 11, fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 12 }}>
-        Accès rapide
-      </p>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
+      {/* ── Accès rapide ── */}
+      <p className="text-label" style={{ marginBottom: 'var(--space-md)' }}>Accès rapide</p>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 'var(--space-md)' }}>
         {[
-          { href: '/admin/orders', icon: '📋', label: 'Commandes', sub: 'Gérer les statuts' },
-          { href: '/admin/products', icon: '📦', label: 'Produits', sub: 'Catalogue' },
-          { href: '/admin/clients', icon: '👥', label: 'Clients', sub: 'Niveaux fidélité' },
-          { href: '/admin/add-product', icon: '➕', label: 'Ajouter', sub: 'Nouveau produit' },
+          { href: '/admin/orders', icon: <IconListDetails size={18} />, label: 'Commandes', sub: 'Gérer les statuts' },
+          { href: '/admin/products', icon: <IconPackage size={18} />, label: 'Produits', sub: 'Catalogue' },
+          { href: '/admin/clients', icon: <IconUsers size={18} />, label: 'Clients', sub: 'Niveaux fidélité' },
+          { href: '/admin/add-product', icon: <IconPlus size={18} />, label: 'Ajouter', sub: 'Nouveau produit' },
         ].map((item) => (
-          <Link key={item.href} href={item.href} style={{
-            background: '#fff', border: '0.5px solid #e5e7eb',
-            borderRadius: 12, padding: '14px', textDecoration: 'none',
-            display: 'flex', alignItems: 'center', gap: 10
-          }}>
-            <div style={{
-              width: 32, height: 32, borderRadius: 8,
-              background: '#dbeafe', display: 'flex', alignItems: 'center',
-              justifyContent: 'center', fontSize: 15, flexShrink: 0
-            }}>
+          <Link
+            key={item.href}
+            href={item.href}
+            className="card"
+            style={{
+              padding: 'var(--space-md)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 'var(--space-md)',
+            }}
+          >
+            <div className="stat-icon" style={{ background: 'var(--color-brand-green-pale)', color: 'var(--color-brand-green)', margin: 0, width: 38, height: 38 }}>
               {item.icon}
             </div>
             <div>
-              <div style={{ fontSize: 13, fontWeight: 600, color: '#111' }}>{item.label}</div>
-              <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 2 }}>{item.sub}</div>
+              <div style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--color-text-primary)' }}>{item.label}</div>
+              <div className="text-muted" style={{ fontSize: '0.75rem' }}>{item.sub}</div>
             </div>
           </Link>
         ))}
