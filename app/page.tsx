@@ -2,7 +2,7 @@ import Link from 'next/link'
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen" style={{ background: '#FAF8F4' }}>
+    <div className="min-h-screen" style={{ background: 'var(--color-bg)' }}>
 
       {/* ==================== HERO ==================== */}
       <section
@@ -10,9 +10,7 @@ export default function HomePage() {
           position: 'relative',
           overflow: 'hidden',
           padding: '64px 24px 72px',
-          background: 'linear-gradient(120deg, #0a3326 0%, #0E5C3F 55%, #137a52 100%)',
-          backgroundSize: '200% 200%',
-          animation: 'gradientShift 14s ease infinite',
+          background: 'linear-gradient(135deg, var(--color-brand-green) 0%, var(--color-brand-green-mid) 100%)',
         }}
       >
         {/* decorative blobs */}
@@ -21,7 +19,7 @@ export default function HomePage() {
           style={{
             position: 'absolute', top: -100, right: -80,
             width: 360, height: 360, borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(242,183,5,0.18) 0%, transparent 70%)',
+            background: 'radial-gradient(circle, rgba(244,197,66,0.18) 0%, transparent 70%)',
           }}
         />
         <div
@@ -29,8 +27,6 @@ export default function HomePage() {
             position: 'absolute', bottom: -80, left: '6%',
             width: 220, height: 220, borderRadius: '50%',
             background: 'radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%)',
-            animation: 'float 5s ease-in-out infinite',
-            animationDelay: '1s',
           }}
         />
 
@@ -39,10 +35,10 @@ export default function HomePage() {
             className="animate-fade-up"
             style={{
               display: 'inline-flex', alignItems: 'center', gap: 6,
-              background: 'rgba(242,183,5,0.15)',
-              border: '1px solid rgba(242,183,5,0.4)',
+              background: 'rgba(244,197,66,0.15)',
+              border: '1px solid rgba(244,197,66,0.4)',
               borderRadius: 999, padding: '5px 14px',
-              fontSize: 12, fontWeight: 600, color: '#f7cc3a', marginBottom: 22,
+              fontSize: 12, fontWeight: 600, color: 'var(--color-brand-gold)', marginBottom: 22,
             }}
           >
             ✦ Livraison en moins de 2h
@@ -53,12 +49,7 @@ export default function HomePage() {
             style={{ fontSize: 'clamp(32px,5vw,46px)', fontWeight: 800, color: '#fff', lineHeight: 1.14, marginBottom: 16, letterSpacing: '-0.02em' }}
           >
             Vos courses,{' '}
-            <span style={{
-              background: 'linear-gradient(135deg,#f7cc3a,#f2b705)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-            }}>
+            <span style={{ color: 'var(--color-brand-gold)' }}>
               livrées chez vous
             </span>
           </h1>
@@ -71,30 +62,16 @@ export default function HomePage() {
           </p>
 
           <div className="animate-fade-up delay-3" style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 44 }}>
-            <Link
-              href="/products"
-              style={{
-                background: 'linear-gradient(135deg,#f7cc3a,#f2b705)',
-                color: '#16201c',
-                borderRadius: 12, padding: '13px 26px',
-                fontWeight: 700, fontSize: 14.5, textDecoration: 'none',
-                display: 'inline-flex', alignItems: 'center', gap: 6,
-                boxShadow: '0 6px 22px rgba(242,183,5,0.35)',
-                transition: 'transform .2s ease, box-shadow .2s ease',
-              }}
-            >
+            <Link href="/products" className="btn btn-gold btn-lg">
               Voir les produits →
             </Link>
             <Link
               href="/signup"
+              className="btn btn-lg"
               style={{
-                background: 'rgba(255,255,255,0.06)',
+                background: 'rgba(255,255,255,0.08)',
                 color: '#fff',
                 border: '1.5px solid rgba(255,255,255,0.3)',
-                borderRadius: 12, padding: '13px 26px',
-                fontSize: 14.5, fontWeight: 600, textDecoration: 'none',
-                backdropFilter: 'blur(6px)',
-                transition: 'background .2s ease, border-color .2s ease',
               }}
             >
               Créer un compte
@@ -114,7 +91,7 @@ export default function HomePage() {
               { num: '4', label: 'Niveaux fidélité' },
             ].map((s) => (
               <div key={s.label}>
-                <div style={{ fontSize: 24, fontWeight: 800, color: '#f7cc3a', letterSpacing: '-0.02em' }}>{s.num}</div>
+                <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--color-brand-gold)', letterSpacing: '-0.02em' }}>{s.num}</div>
                 <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.6)', marginTop: 3 }}>{s.label}</div>
               </div>
             ))}
@@ -125,42 +102,29 @@ export default function HomePage() {
       {/* ==================== FIDÉLITÉ ==================== */}
       <div className="animate-fade-up" style={{ maxWidth: 760, margin: '-28px auto 0', padding: '0 24px', position: 'relative', zIndex: 2 }}>
         <div
+          className="card"
           style={{
-            background: '#fff',
-            border: '1px solid #e9e4d8',
-            borderRadius: 18, padding: '18px 22px',
+            padding: '18px 22px',
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             gap: 16, flexWrap: 'wrap',
-            boxShadow: '0 12px 32px rgba(14,92,63,0.1)',
           }}
         >
           <div>
-            <div style={{ fontSize: 13.5, fontWeight: 700, color: '#0a3326' }}>Programme de fidélité</div>
-            <div style={{ fontSize: 12, color: '#5b665f', marginTop: 2 }}>Économisez à chaque commande</div>
+            <div style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--color-text-primary)' }}>Programme de fidélité</div>
+            <div className="text-muted" style={{ fontSize: 12, marginTop: 2 }}>Économisez à chaque commande</div>
           </div>
           <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap' }}>
-            {[
-              { label: 'Bronze 0%', bg: 'linear-gradient(135deg,#e3c19a,#c98a4f)', color: '#fff' },
-              { label: 'Argent 5%', bg: 'linear-gradient(135deg,#d4d5d8,#9b9da1)', color: '#fff' },
-              { label: 'Or 10%', bg: 'linear-gradient(135deg,#f7cc3a,#f2b705)', color: '#5a3d00' },
-              { label: 'Platine 15%', bg: 'linear-gradient(135deg,#ece9e4,#b9b9bb)', color: '#2b2b2b' },
-            ].map((lvl) => (
-              <span key={lvl.label} style={{
-                background: lvl.bg, color: lvl.color,
-                fontSize: 11, fontWeight: 700,
-                padding: '4px 12px', borderRadius: 999,
-                boxShadow: '0 2px 6px rgba(0,0,0,0.08)',
-              }}>
-                {lvl.label}
-              </span>
-            ))}
+            <span className="badge badge-bronze">Bronze 0%</span>
+            <span className="badge badge-silver">Argent 5%</span>
+            <span className="badge badge-gold">Or 10%</span>
+            <span className="badge badge-platinum">Platine 15%</span>
           </div>
         </div>
       </div>
 
       {/* ==================== CATÉGORIES ==================== */}
       <section style={{ maxWidth: 760, margin: '48px auto 0', padding: '0 24px' }}>
-        <p style={{ fontSize: 11, fontWeight: 700, color: '#94a39a', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 18 }}>
+        <p className="text-label" style={{ marginBottom: 18 }}>
           Nos rayons
         </p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
@@ -173,17 +137,15 @@ export default function HomePage() {
             <Link
               key={cat.name}
               href="/products"
-              className="animate-fade-up"
+              className="card animate-fade-up"
               style={{
                 animationDelay: `${i * 0.06}s`,
-                background: '#fff', border: '1px solid #ece8e0',
-                borderRadius: 16, padding: '20px 10px', textAlign: 'center',
+                padding: '20px 10px', textAlign: 'center',
                 textDecoration: 'none', display: 'block',
-                transition: 'transform .25s var(--ease), box-shadow .25s ease, border-color .25s ease',
               }}
             >
               <div style={{ fontSize: 30, marginBottom: 10 }}>{cat.emoji}</div>
-              <div style={{ fontSize: 12.5, color: '#16201c', fontWeight: 600 }}>{cat.name}</div>
+              <div style={{ fontSize: 12.5, color: 'var(--color-text-primary)', fontWeight: 600 }}>{cat.name}</div>
             </Link>
           ))}
         </div>
@@ -191,7 +153,7 @@ export default function HomePage() {
 
       {/* ==================== AVANTAGES ==================== */}
       <section style={{ maxWidth: 760, margin: '48px auto 0', padding: '0 24px' }}>
-        <p style={{ fontSize: 11, fontWeight: 700, color: '#94a39a', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 18 }}>
+        <p className="text-label" style={{ marginBottom: 18 }}>
           Pourquoi Hannouty ?
         </p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
@@ -202,24 +164,20 @@ export default function HomePage() {
           ].map((av, i) => (
             <div
               key={av.title}
-              className="animate-fade-up"
+              className="card animate-fade-up"
               style={{
                 animationDelay: `${i * 0.08}s`,
-                background: '#fff', border: '1px solid #ece8e0',
-                borderRadius: 16, padding: '20px 16px',
-                transition: 'transform .25s var(--ease), box-shadow .25s ease',
+                padding: '20px 16px',
               }}
             >
-              <div style={{
-                width: 38, height: 38, borderRadius: 11,
-                background: 'linear-gradient(135deg,#e3f5ec,#cdeede)',
-                display: 'flex', alignItems: 'center',
-                justifyContent: 'center', fontSize: 17, marginBottom: 14,
+              <div className="stat-icon" style={{
+                background: 'var(--color-brand-green-pale)', color: 'var(--color-brand-green)',
+                width: 38, height: 38, fontSize: 17, marginBottom: 14,
               }}>
                 {av.icon}
               </div>
-              <div style={{ fontSize: 13.5, fontWeight: 700, color: '#16201c', marginBottom: 5 }}>{av.title}</div>
-              <div style={{ fontSize: 12, color: '#5b665f', lineHeight: 1.55 }}>{av.desc}</div>
+              <div style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--color-text-primary)', marginBottom: 5 }}>{av.title}</div>
+              <div className="text-muted" style={{ fontSize: 12, lineHeight: 1.55 }}>{av.desc}</div>
             </div>
           ))}
         </div>
@@ -229,10 +187,8 @@ export default function HomePage() {
       <section style={{ maxWidth: 760, margin: '48px auto', padding: '0 24px' }}>
         <div
           style={{
-            background: 'linear-gradient(120deg, #0a3326 0%, #0E5C3F 55%, #137a52 100%)',
-            backgroundSize: '200% 200%',
-            animation: 'gradientShift 14s ease infinite',
-            borderRadius: 22, padding: '46px 32px', textAlign: 'center', color: '#fff',
+            background: 'linear-gradient(135deg, var(--color-brand-green) 0%, var(--color-brand-green-mid) 100%)',
+            borderRadius: 'var(--radius-lg)', padding: '46px 32px', textAlign: 'center', color: '#fff',
             position: 'relative', overflow: 'hidden',
           }}
         >
@@ -240,32 +196,22 @@ export default function HomePage() {
             style={{
               position: 'absolute', top: -60, right: -40,
               width: 200, height: 200, borderRadius: '50%',
-              background: 'radial-gradient(circle, rgba(242,183,5,0.16) 0%, transparent 70%)',
+              background: 'radial-gradient(circle, rgba(244,197,66,0.16) 0%, transparent 70%)',
             }}
           />
-          <h2 style={{ fontSize: 24, fontWeight: 800, marginBottom: 9, position: 'relative' }}>Prêt à commander ?</h2>
+          <h2 style={{ fontSize: 24, fontWeight: 800, marginBottom: 9, position: 'relative', color: '#fff' }}>Prêt à commander ?</h2>
           <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.72)', marginBottom: 26, position: 'relative' }}>
             Inscription gratuite. Réductions dès la première commande.
           </p>
-          <Link
-            href="/signup"
-            style={{
-              background: 'linear-gradient(135deg,#f7cc3a,#f2b705)',
-              color: '#16201c',
-              borderRadius: 12, padding: '13px 30px',
-              fontWeight: 700, fontSize: 14.5, textDecoration: 'none',
-              display: 'inline-block', position: 'relative',
-              boxShadow: '0 8px 24px rgba(242,183,5,0.4)',
-            }}
-          >
+          <Link href="/signup" className="btn btn-gold btn-lg" style={{ position: 'relative' }}>
             S'inscrire maintenant
           </Link>
         </div>
       </section>
 
       {/* ==================== FOOTER ==================== */}
-      <footer style={{ borderTop: '1px solid #ece8e0', padding: '26px', textAlign: 'center' }}>
-        <p style={{ fontSize: 12, color: '#94a39a' }}>
+      <footer style={{ borderTop: '1px solid var(--color-border)', padding: '26px', textAlign: 'center' }}>
+        <p className="text-muted" style={{ fontSize: 12 }}>
           © {new Date().getFullYear()} Hannouty. Tous droits réservés.
         </p>
       </footer>
