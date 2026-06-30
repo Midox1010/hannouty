@@ -3,6 +3,16 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/app/lib/supabase/client'
+import {
+  IconShoppingCart,
+  IconTools,
+  IconLayoutDashboard,
+  IconListDetails,
+  IconPackage,
+  IconUsers,
+  IconUser,
+  IconLogout,
+} from '@tabler/icons-react'
 
 type Profile = {
   role: string
@@ -10,11 +20,11 @@ type Profile = {
   level?: { name: string }
 }
 
-const LEVEL_STYLES: Record<string, string> = {
-  Bronze: 'linear-gradient(135deg,#cd7f32,#a0522d)',
-  Argent: 'linear-gradient(135deg,#b8b9bd,#7c7d80)',
-  Or: 'linear-gradient(135deg,#f7cc3a,#c98f04)',
-  Platine: 'linear-gradient(135deg,#e9e9ea,#9a9a9a)',
+const LEVEL_BADGE: Record<string, string> = {
+  Bronze: 'badge-bronze',
+  Argent: 'badge-silver',
+  Or: 'badge-gold',
+  Platine: 'badge-platinum',
 }
 
 export default function Navbar() {
@@ -47,7 +57,7 @@ export default function Navbar() {
         .eq('id', user.id)
         .single()
 
-      setProfile(data)
+      setProfile(data as any)
       setLoading(false)
     }
 
@@ -71,40 +81,15 @@ export default function Navbar() {
   }
 
   if (loading) {
-    return <div style={{ height: 64, background: 'var(--cream, #FAF8F4)' }} />
+    return <div style={{ height: 64, background: 'var(--color-bg)' }} />
   }
 
-  const NavLink = ({ href, children }: { href: string; children: React.ReactNode }) => {
+  const NavLink = ({ href, children, icon }: { href: string; children: React.ReactNode; icon?: React.ReactNode }) => {
     const active = pathname === href
     return (
-      <Link
-        href={href}
-        style={{
-          position: 'relative',
-          color: active ? '#fff' : 'rgba(255,255,255,0.78)',
-          fontWeight: 500,
-          fontSize: 14,
-          padding: '6px 2px',
-          transition: 'color .2s ease',
-        }}
-        onMouseEnter={e => (e.currentTarget.style.color = '#fff')}
-        onMouseLeave={e => (e.currentTarget.style.color = active ? '#fff' : 'rgba(255,255,255,0.78)')}
-      >
+      <Link href={href} className={`navbar-link ${active ? 'active' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        {icon}
         {children}
-        <span
-          style={{
-            position: 'absolute',
-            left: 0,
-            bottom: -4,
-            height: 2,
-            width: '100%',
-            borderRadius: 2,
-            background: '#f2b705',
-            transform: active ? 'scaleX(1)' : 'scaleX(0)',
-            transformOrigin: 'left',
-            transition: 'transform .25s ease',
-          }}
-        />
       </Link>
     )
   }
@@ -112,59 +97,38 @@ export default function Navbar() {
   // ==================== NAVBAR ADMIN ====================
   if (profile?.role === 'admin') {
     return (
-      <nav
-        style={{
-          position: 'sticky',
-          top: 0,
-          zIndex: 100,
-          background: 'rgba(15,20,18,0.92)',
-          backdropFilter: 'blur(14px)',
-          WebkitBackdropFilter: 'blur(14px)',
-          borderBottom: '1px solid rgba(255,255,255,0.08)',
-          padding: '12px 28px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          boxShadow: scrolled ? '0 4px 24px rgba(0,0,0,.35)' : 'none',
-          transition: 'box-shadow .3s ease',
-        }}
-      >
+      <nav className={`navbar navbar-admin ${scrolled ? 'scrolled' : ''}`} style={{ padding: '0 28px', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{
-            fontSize: 17, fontWeight: 800, color: '#fff', letterSpacing: '-0.02em',
-            display: 'flex', alignItems: 'center', gap: 6,
-          }}>
-            🛠️ Hannouty
+          <span className="navbar-brand" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span
+              style={{
+                width: 30, height: 30, borderRadius: 8,
+                background: 'var(--color-brand-gold)',
+                color: 'var(--color-brand-green)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontWeight: 800, fontSize: 15,
+              }}
+            >
+              H
+            </span>
+            Hannouty
           </span>
-          <span style={{
-            fontSize: 10.5, fontWeight: 700, color: '#1a1a1a',
-            background: 'linear-gradient(135deg,#f7cc3a,#c98f04)',
-            padding: '3px 10px', borderRadius: 999, letterSpacing: '0.04em',
-          }}>
+          <span className="badge" style={{ background: 'var(--color-admin-accent)', color: '#0F172A' }}>
             ADMIN
           </span>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 28 }}>
-          <NavLink href="/admin">Dashboard</NavLink>
-          <NavLink href="/admin/orders">Commandes</NavLink>
-          <NavLink href="/admin/products">Produits</NavLink>
-          <NavLink href="/admin/clients">Clients</NavLink>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <NavLink href="/admin" icon={<IconLayoutDashboard size={16} />}>Dashboard</NavLink>
+          <NavLink href="/admin/orders" icon={<IconListDetails size={16} />}>Commandes</NavLink>
+          <NavLink href="/admin/products" icon={<IconPackage size={16} />}>Produits</NavLink>
+          <NavLink href="/admin/clients" icon={<IconUsers size={16} />}>Clients</NavLink>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)' }}>{profile.full_name}</span>
-          <button
-            onClick={handleLogout}
-            style={{
-              fontSize: 13, fontWeight: 600, color: '#fff',
-              background: 'rgba(220,38,38,0.85)', border: 'none',
-              padding: '8px 16px', borderRadius: 10, cursor: 'pointer',
-              transition: 'transform .15s ease, background .2s ease',
-            }}
-            onMouseEnter={e => { e.currentTarget.style.background = '#dc2626'; e.currentTarget.style.transform = 'translateY(-1px)' }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(220,38,38,0.85)'; e.currentTarget.style.transform = 'translateY(0)' }}
-          >
+          <span style={{ fontSize: 13, color: 'var(--color-admin-muted)' }}>{profile.full_name}</span>
+          <button onClick={handleLogout} className="btn btn-danger btn-sm">
+            <IconLogout size={15} />
             Déconnexion
           </button>
         </div>
@@ -174,33 +138,23 @@ export default function Navbar() {
 
   // ==================== NAVBAR CLIENT ====================
   return (
-    <nav
-      style={{
-        position: 'sticky',
-        top: 0,
-        zIndex: 100,
-        background: scrolled
-          ? 'linear-gradient(120deg, #0a3326 0%, #0E5C3F 55%, #137a52 100%)'
-          : 'linear-gradient(120deg, #0E5C3F 0%, #137a52 60%, #189564 100%)',
-        backgroundSize: '200% 200%',
-        animation: 'gradientShift 12s ease infinite',
-        padding: '12px 28px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        boxShadow: scrolled ? '0 6px 28px rgba(10,51,38,0.35)' : '0 2px 10px rgba(10,51,38,0.15)',
-        transition: 'box-shadow .3s ease',
-      }}
-    >
-      <Link href="/" style={{
-        display: 'flex', alignItems: 'center', gap: 7,
-        fontSize: 19, fontWeight: 800, color: '#fff', letterSpacing: '-0.02em',
-      }}>
-        <span style={{ fontSize: 21 }}>🛒</span>
+    <nav className={`navbar navbar-client ${scrolled ? 'scrolled' : ''}`} style={{ padding: '0 28px', justifyContent: 'space-between' }}>
+      <Link href="/" className="navbar-brand" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <span
+          style={{
+            width: 32, height: 32, borderRadius: 9,
+            background: 'var(--color-brand-gold)',
+            color: 'var(--color-brand-green)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontWeight: 800, fontSize: 16,
+          }}
+        >
+          H
+        </span>
         Hannouty
       </Link>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 26 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
         <NavLink href="/products">Produits</NavLink>
         {profile && (
           <>
@@ -214,57 +168,22 @@ export default function Navbar() {
         {profile ? (
           <>
             {profile.level && (
-              <span style={{
-                fontSize: 11, fontWeight: 700, color: '#fff',
-                background: LEVEL_STYLES[profile.level.name] ?? 'rgba(255,255,255,0.18)',
-                padding: '4px 12px', borderRadius: 999,
-                boxShadow: '0 2px 8px rgba(0,0,0,0.18)',
-                letterSpacing: '0.02em',
-              }}>
+              <span className={`badge ${LEVEL_BADGE[profile.level.name] ?? ''}`}>
                 {profile.level.name}
               </span>
             )}
-            <Link
-              href="/cart"
-              style={{
-                position: 'relative', fontSize: 19, color: '#fff',
-                width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                borderRadius: 10, background: 'rgba(255,255,255,0.1)',
-                transition: 'background .2s ease, transform .2s ease',
-              }}
-              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.2)'; e.currentTarget.style.transform = 'scale(1.06)' }}
-              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.transform = 'scale(1)' }}
-            >
-              🛒
+
+            <Link href="/cart" className="btn-icon" style={{ position: 'relative', background: 'rgba(255,255,255,0.12)', color: '#fff' }}>
+              <IconShoppingCart size={20} />
             </Link>
-            <button
-              onClick={handleLogout}
-              style={{
-                fontSize: 13, fontWeight: 600, color: '#fff',
-                background: 'transparent', border: '1.5px solid rgba(255,255,255,0.35)',
-                padding: '7px 15px', borderRadius: 10, cursor: 'pointer',
-                transition: 'all .2s ease',
-              }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = '#f87171'; e.currentTarget.style.color = '#fca5a5' }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.35)'; e.currentTarget.style.color = '#fff' }}
-            >
+
+            <button onClick={handleLogout} className="btn btn-outline btn-sm" style={{ color: '#fff', borderColor: 'rgba(255,255,255,0.35)' }}>
+              <IconLogout size={15} />
               Déconnexion
             </button>
           </>
         ) : (
-          <Link
-            href="/login"
-            style={{
-              fontSize: 13.5, fontWeight: 700, color: '#1a1a1a',
-              background: 'linear-gradient(135deg,#f7cc3a,#f2b705)',
-              padding: '9px 20px', borderRadius: 10,
-              boxShadow: '0 4px 14px rgba(242,183,5,0.4)',
-              transition: 'transform .2s ease, box-shadow .2s ease',
-              display: 'inline-block',
-            }}
-            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 6px 20px rgba(242,183,5,0.55)' }}
-            onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 14px rgba(242,183,5,0.4)' }}
-          >
+          <Link href="/login" className="btn btn-gold btn-md">
             Connexion
           </Link>
         )}
