@@ -1,18 +1,55 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useCart } from '../context/CartContext'
 import { createClient } from '../lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import {
+  IconShoppingCart,
+  IconMinus,
+  IconPlus,
+  IconTrash,
+  IconArrowLeft,
+  IconTrophy,
+} from '@tabler/icons-react'
+
+const LEVEL_BADGE: Record<string, string> = {
+  Bronze: 'badge-bronze',
+  Argent: 'badge-silver',
+  Or: 'badge-gold',
+  Platine: 'badge-platinum',
+}
 
 export default function CartPage() {
-  const { cart, removeFromCart, updateQuantity, clearCart, totalItems, totalPrice } = useCart()
+  const { cart, removeFromCart, updateQuantity, clearCart, totalPrice } = useCart()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [levelName, setLevelName] = useState<string | null>(null)
   const [discountPercent, setDiscountPercent] = useState(0)
   const router = useRouter()
   const supabase = createClient()
+
+  // Charger le niveau de fidélité réel du client au montage
+  useEffect(() => {
+    async function loadLevel() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('levels(name, discount_percent)')
+        .eq('id', user.id)
+        .single()
+
+      const level = (profile as any)?.levels
+      if (level) {
+        setLevelName(level.name)
+        setDiscountPercent(level.discount_percent ?? 0)
+      }
+    }
+    loadLevel()
+  }, [])
 
   const subtotal = totalPrice
   const discountAmount = (subtotal * discountPercent) / 100
@@ -69,118 +106,138 @@ export default function CartPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto px-6 py-8">
-        <h1 className="text-2xl font-semibold text-gray-900 mb-6">Mon panier</h1>
+    <div className="container animate-fade-in" style={{ paddingBlock: 'var(--space-xl)' }}>
+      <h1 style={{ marginBottom: 'var(--space-xl)' }}>Mon panier</h1>
 
-        {cart.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-24 text-center">
-            <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center text-4xl mb-4">🛒</div>
-            <h2 className="text-lg font-semibold text-gray-900 mb-1">Votre panier est vide</h2>
-            <p className="text-sm text-gray-400 mb-6">Ajoutez des produits pour commencer vos achats</p>
-            <Link href="/products"
-              className="bg-green-500 hover:bg-green-600 text-white text-sm font-medium px-6 py-3 rounded-xl transition-colors">
-              Voir les produits
-            </Link>
-          </div>
-        ) : (
-          <div className="grid grid-cols-[1fr_320px] gap-4">
-            {/* Articles */}
-            <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-              <div className="px-5 py-4 border-b border-gray-50">
-                <p className="text-sm font-semibold text-gray-900">{cart.length} article{cart.length !== 1 ? 's' : ''}</p>
-              </div>
-              <div className="divide-y divide-gray-50">
-                {cart.map((item) => (
-                  <div key={item.id} className="flex items-center gap-4 px-5 py-4">
-                    <div className="w-14 h-14 bg-gray-50 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden">
-                      {item.image_url ? (
-                        <img src={item.image_url} alt={item.name} className="max-w-full max-h-full object-contain" />
-                      ) : (
-                        <span className="text-2xl text-gray-200">🛒</span>
-                      )}
-                    </div>
-
-                    <div className="flex-1">
-                      <p className="text-sm font-semibold text-gray-900">{item.name}</p>
-                      <p className="text-xs text-gray-400 mt-0.5">{item.price.toFixed(2)} MAD / unité</p>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                        className="w-7 h-7 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-600 font-medium transition-colors"
-                      >−</button>
-                      <span className="text-sm font-semibold text-gray-900 w-5 text-center">{item.quantity}</span>
-                      <button
-                        onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                        className="w-7 h-7 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-600 font-medium transition-colors"
-                      >+</button>
-                    </div>
-
-                    <div className="text-right min-w-[70px]">
-                      <p className="text-sm font-bold text-gray-900">{(item.price * item.quantity).toFixed(2)} MAD</p>
-                    </div>
-
-                    <button
-                      onClick={() => removeFromCart(item.id)}
-                      className="text-gray-300 hover:text-red-400 transition-colors text-lg leading-none"
-                    >×</button>
-                  </div>
-                ))}
-              </div>
+      {cart.length === 0 ? (
+        <div className="empty-state">
+          <div className="empty-icon"><IconShoppingCart size={40} /></div>
+          <h3>Votre panier est vide</h3>
+          <p>Ajoutez des produits pour commencer vos achats</p>
+          <Link href="/products" className="btn btn-primary btn-md" style={{ marginTop: 'var(--space-md)' }}>
+            Voir les produits
+          </Link>
+        </div>
+      ) : (
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 340px',
+            gap: 'var(--space-lg)',
+          }}
+        >
+          {/* ── Articles ── */}
+          <div className="card">
+            <div style={{ padding: 'var(--space-md) var(--space-lg)', borderBottom: '1px solid var(--color-border)' }}>
+              <p style={{ fontWeight: 700, fontSize: '0.9375rem' }}>
+                {cart.length} article{cart.length !== 1 ? 's' : ''}
+              </p>
             </div>
 
-            {/* Récapitulatif */}
-            <div className="space-y-3">
-              <div className="bg-white rounded-2xl border border-gray-100 p-5">
-                <p className="text-sm font-semibold text-gray-900 mb-4">Résumé</p>
-
-                <div className="space-y-2 mb-4">
-                  <div className="flex justify-between text-sm text-gray-500">
-                    <span>Sous-total</span>
-                    <span>{subtotal.toFixed(2)} MAD</span>
-                  </div>
-                  {discountAmount > 0 && (
-                    <div className="flex justify-between text-sm text-green-600">
-                      <span>Réduction fidélité</span>
-                      <span>−{discountAmount.toFixed(2)} MAD</span>
-                    </div>
+            {cart.map((item) => (
+              <div key={item.id} className="cart-item">
+                <div className="cart-item-img flex-center">
+                  {item.image_url ? (
+                    <img src={item.image_url} alt={item.name} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+                  ) : (
+                    <IconShoppingCart size={24} style={{ color: 'var(--color-text-muted)' }} />
                   )}
-                  <div className="flex justify-between text-base font-bold text-gray-900 pt-2 border-t border-gray-100">
-                    <span>Total</span>
-                    <span>{total.toFixed(2)} MAD</span>
-                  </div>
                 </div>
 
-                {error && (
-                  <p className="text-xs text-red-500 mb-3 bg-red-50 px-3 py-2 rounded-lg">{error}</p>
-                )}
+                <div style={{ flex: 1 }}>
+                  <p style={{ fontWeight: 600, fontSize: '0.9rem' }}>{item.name}</p>
+                  <p className="text-muted" style={{ fontSize: '0.8rem', marginTop: 2 }}>
+                    {item.price.toFixed(2)} MAD / unité
+                  </p>
+                </div>
+
+                <div className="qty-control">
+                  <button onClick={() => updateQuantity(item.id, item.quantity - 1)} className="qty-btn">
+                    <IconMinus size={14} />
+                  </button>
+                  <span className="qty-value">{item.quantity}</span>
+                  <button onClick={() => updateQuantity(item.id, item.quantity + 1)} className="qty-btn">
+                    <IconPlus size={14} />
+                  </button>
+                </div>
+
+                <div style={{ minWidth: 80, textAlign: 'right' }}>
+                  <p style={{ fontWeight: 700, fontSize: '0.9rem' }}>
+                    {(item.price * item.quantity).toFixed(2)} MAD
+                  </p>
+                </div>
 
                 <button
-                  onClick={handleOrder}
-                  disabled={loading}
-                  className="w-full bg-green-500 hover:bg-green-600 disabled:bg-gray-300 text-white text-sm font-semibold py-3 rounded-xl transition-colors"
+                  onClick={() => removeFromCart(item.id)}
+                  className="btn-icon-sm"
+                  style={{ background: 'transparent', color: 'var(--color-text-muted)' }}
+                  onMouseEnter={e => (e.currentTarget.style.color = 'var(--color-brand-red)')}
+                  onMouseLeave={e => (e.currentTarget.style.color = 'var(--color-text-muted)')}
                 >
-                  {loading ? 'Commande en cours…' : 'Passer la commande'}
+                  <IconTrash size={16} />
                 </button>
+              </div>
+            ))}
+          </div>
 
-                <Link href="/products" className="block text-center text-xs text-gray-400 hover:text-gray-600 mt-3 transition-colors">
-                  ← Continuer mes achats
-                </Link>
+          {/* ── Récapitulatif ── */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
+            <div className="card price-summary">
+              <p style={{ fontWeight: 700, fontSize: '0.9375rem' }}>Résumé</p>
+
+              <div className="price-row">
+                <span className="label">Sous-total</span>
+                <span className="value">{subtotal.toFixed(2)} MAD</span>
               </div>
 
-              <div className="bg-green-50 border border-green-200 rounded-2xl p-4">
-                <p className="text-xs font-semibold text-green-800 mb-1">🏆 Programme fidélité</p>
-                <p className="text-xs text-green-700">
-                  Cette commande sera comptabilisée dans votre progression de niveau.
-                  Atteignez le niveau Argent pour bénéficier de 5% de remise.
-                </p>
+              {discountAmount > 0 && (
+                <div className="price-row discount">
+                  <span className="label">Réduction fidélité {levelName ? `(${levelName})` : ''}</span>
+                  <span className="value">−{discountAmount.toFixed(2)} MAD</span>
+                </div>
+              )}
+
+              <div className="price-row total">
+                <span className="label">Total</span>
+                <span className="value">{total.toFixed(2)} MAD</span>
               </div>
+
+              {error && <div className="alert alert-error">{error}</div>}
+
+              <button
+                onClick={handleOrder}
+                disabled={loading}
+                className="btn btn-primary btn-md"
+                style={{ width: '100%' }}
+              >
+                {loading ? 'Commande en cours…' : 'Passer la commande'}
+              </button>
+
+              <Link
+                href="/products"
+                className="text-muted flex-center"
+                style={{ fontSize: '0.8rem', gap: 4, marginTop: 4 }}
+              >
+                <IconArrowLeft size={14} />
+                Continuer mes achats
+              </Link>
+            </div>
+
+            <div className="alert alert-success" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 6 }}>
+              <p style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700, fontSize: '0.8125rem' }}>
+                <IconTrophy size={16} /> Programme fidélité
+              </p>
+              <p style={{ fontSize: '0.8125rem', margin: 0 }}>
+                {levelName ? (
+                  <>Vous êtes niveau <strong>{levelName}</strong> — cette commande sera comptabilisée dans votre progression.</>
+                ) : (
+                  'Cette commande sera comptabilisée dans votre progression de niveau.'
+                )}
+              </p>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   )
 }
