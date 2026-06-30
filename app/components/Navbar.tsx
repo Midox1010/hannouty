@@ -34,15 +34,7 @@ export default function Navbar() {
   const [loading, setLoading] = useState(true)
   const [scrolled, setScrolled] = useState(false)
 
-  if (pathname === '/login' || pathname === '/signup') return null
-  if (pathname.startsWith('/admin')) return null
-  if (
-  pathname.startsWith('/products') ||
-  pathname.startsWith('/cart') ||
-  pathname.startsWith('/orders') ||
-  pathname.startsWith('/profile')
-  ) return null
-
+  // ✅ Tous les hooks d'abord, sans exception
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8)
     window.addEventListener('scroll', onScroll)
@@ -76,6 +68,16 @@ export default function Navbar() {
     await supabase.auth.signOut()
     router.push('/login')
   }
+
+  // ✅ Les conditions de sortie viennent APRÈS tous les hooks
+  if (pathname === '/login' || pathname === '/signup') return null
+  if (pathname.startsWith('/admin')) return null
+  if (
+    pathname.startsWith('/products') ||
+    pathname.startsWith('/cart') ||
+    pathname.startsWith('/orders') ||
+    pathname.startsWith('/profile')
+  ) return null
 
   if (loading) return <div style={{ height: 64, background: 'var(--color-bg)' }} />
 
