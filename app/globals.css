@@ -8,12 +8,12 @@
 /* ── 1. TOKENS ───────────────────────────────── */
 :root {
   /* Brand */
-  --color-brand-green:        #0F4C35;
-  --color-brand-green-mid:    #1A6B4A;
-  --color-brand-green-light:  #2D9B6A;
-  --color-brand-green-pale:   #E8F5EE;
-  --color-brand-gold:         #F5C842;
-  --color-brand-gold-deep:    #D4A017;
+ --color-brand-green:        #1B2A6B;
+  --color-brand-green-mid:    #24368A;
+  --color-brand-green-light:  #3447B3;
+  --color-brand-green-pale:   #E8EAF6;
+  --color-brand-gold:         #F4C542;
+  --color-brand-gold-deep:    #D9A916;
   --color-brand-red:          #E5383B;
 
   /* Neutrals */
@@ -67,9 +67,8 @@
   --shadow-sm:  0 2px 8px rgba(0,0,0,.07);
   --shadow-md:  0 4px 16px rgba(0,0,0,.10);
   --shadow-lg:  0 8px 32px rgba(0,0,0,.12);
-  --shadow-green: 0 4px 20px rgba(15,76,53,.25);
-  --shadow-gold:  0 4px 16px rgba(245,200,66,.35);
-
+  --shadow-green: 0 4px 20px rgba(27,42,107,.25);
+  --shadow-gold:  0 4px 16px rgba(244,197,66,.35);
   /* Transitions */
   --ease-out:  cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in:   cubic-bezier(0.7, 0, 0.84, 0);
@@ -234,11 +233,11 @@ p {
 .navbar-client {
   background: linear-gradient(135deg, var(--color-brand-green) 0%, var(--color-brand-green-mid) 100%);
   border-bottom-color: rgba(255,255,255,.08);
-  box-shadow: 0 2px 20px rgba(15,76,53,.3);
+  box-shadow: 0 2px 20px rgba(27,42,107,.3);
 }
 
 .navbar-client.scrolled {
-  box-shadow: 0 4px 24px rgba(15,76,53,.4);
+  box-shadow: 0 4px 24px rgba(27,42,107,.4);
 }
 
 /* Admin navbar — deep slate */
@@ -334,7 +333,7 @@ p {
 
 .btn-primary:hover:not(:disabled) {
   background: linear-gradient(135deg, var(--color-brand-green-mid) 0%, var(--color-brand-green-light) 100%);
-  box-shadow: 0 6px 24px rgba(15,76,53,.35);
+  box-shadow: 0 6px 24px rgba(27,42,107,.35);
   transform: translateY(-1px);
 }
 
@@ -569,7 +568,7 @@ p {
 .form-select:focus,
 .form-textarea:focus {
   border-color: var(--color-brand-green);
-  box-shadow: 0 0 0 3px rgba(15,76,53,.12);
+  box-shadow: 0 0 0 3px rgba(27,42,107,.12);
 }
 
 .form-input.error,
@@ -851,7 +850,7 @@ p {
   background: var(--color-surface);
   border-color: var(--color-brand-green);
   color: var(--color-brand-green);
-  box-shadow: 0 0 0 4px rgba(15,76,53,.15);
+  box-shadow: 0 0 0 4px rgba(27,42,107,.15);
 }
 
 .step-label {
@@ -1236,8 +1235,8 @@ p {
 }
 
 @keyframes pulse-green {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(15,76,53,.4); }
-  50%       { box-shadow: 0 0 0 8px rgba(15,76,53,0); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(27,42,107,.4); }
+  50%       { box-shadow: 0 0 0 8px rgba(27,42,107,0); }
 }
 
 .animate-fade-in     { animation: fade-in var(--duration-base) var(--ease-out); }
