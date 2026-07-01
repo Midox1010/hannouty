@@ -45,22 +45,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', background: 'var(--color-bg)' }}>
-
-      {/* ── Panneau gauche ── */}
-      <div
-        className="animate-fade-in"
-        style={{
-          width: '44%',
-          background: 'linear-gradient(145deg, var(--color-brand-green) 0%, var(--color-brand-green-mid) 100%)',
-          padding: 'var(--space-2xl)',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'space-between',
-          position: 'relative',
-          overflow: 'hidden',
-        }}
-      >
+    <div className="login-panel-left animate-fade-in">
         {/* Cercles déco */}
         <div style={{ position: 'absolute', top: -60, right: -60, width: 240, height: 240, borderRadius: '50%', background: 'var(--color-brand-gold)', opacity: 0.08 }} />
         <div style={{ position: 'absolute', bottom: -80, left: -40, width: 200, height: 200, borderRadius: '50%', background: 'var(--color-brand-gold)', opacity: 0.06 }} />
@@ -116,7 +101,7 @@ export default function LoginPage() {
       </div>
 
       {/* ── Panneau droit (formulaire) ── */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 'var(--space-2xl)' }}>
+      <div className="login-panel-right">
         <div style={{ width: '100%', maxWidth: 420 }} className="animate-slide-up">
 
           <h1 style={{ marginBottom: 'var(--space-xs)', fontSize: '1.875rem' }}>Connexion</h1>
