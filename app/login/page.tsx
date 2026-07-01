@@ -45,6 +45,7 @@ export default function LoginPage() {
   }
 
   return (
+  <div className="login-container">
     <div className="login-panel-left animate-fade-in">
         {/* Cercles déco */}
         <div style={{ position: 'absolute', top: -60, right: -60, width: 240, height: 240, borderRadius: '50%', background: 'var(--color-brand-gold)', opacity: 0.08 }} />
@@ -194,7 +195,7 @@ export default function LoginPage() {
             </Link>
           </p>
         </div>
-      </div>
     </div>
-  )
+  </div>
+)
 }
